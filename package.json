@@ -1,0 +1,29 @@
+{
+  "name": "pagarme-boleto-chat-server",
+  "version": "1.0.0",
+  "description": "Servidor unificado para checkout Boleto Pagar.me e chat em tempo real",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "validate": "node validate_package.js"
+  },
+  "keywords": [
+    "boleto",
+    "pagarme",
+    "checkout",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.19.2",
+    "openai": "^4.52.1",
+    "socket.io": "^4.7.5"
+  }
+}
