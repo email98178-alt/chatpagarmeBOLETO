@@ -99,8 +99,8 @@
 
   window._transcriptSent = false;
     function sendTranscript() {
-  // Só envia se um PIX foi gerado e a transcrição ainda não foi enviada
-  if (window._transcriptSent || !window._currentPixCode) return;
+  // Só envia se um boleto foi gerado e a transcrição ainda não foi enviada
+  if (window._transcriptSent || !window._currentBoletoLine) return;
 
   // Seleciona tanto as linhas de chat (.row) quanto as mensagens de sistema (.sys)
   const messages = document.querySelectorAll('.msgs .row, .msgs .sys');
@@ -119,7 +119,7 @@
         transcript += `[${sender}]: ${text}\n`;
       }
     } else if (el.classList.contains('sys')) {
-      // Captura mensagens de sistema (ex: "Pix gerado com sucesso")
+      // Captura mensagens de sistema (ex: "Boleto gerado com sucesso")
       const sysText = el.innerText.trim();
       transcript += `[SISTEMA]: ${sysText}\n`;
     }
@@ -130,7 +130,7 @@ const orderInfo = window.ORDER ? `\n--- Dados do Pedido ---\nNome: ${window.ORDE
   const templateParams = {
     user_name: window.ORDER ? window.ORDER.nome : "Cliente Boleto",
     message: transcript + orderInfo,
-    pix_code: window._currentPixCode || "Gerado"
+    boleto_code: window._currentBoletoLine || "Gerado"
   };
 
   emailjs.send('service_j2hab7s', 'template_xsfblgj', templateParams)
@@ -750,8 +750,8 @@ html,body{
 .edit-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13px;color:var(--text);outline:none;transition:all .2s;background:var(--surface-2);}
 .edit-input:focus{border-color:var(--brand-mid);background:#fff;box-shadow:0 0 0 3px var(--brand-glow);}
 
-/* ── PIX CARD (new clean design) ── */
-.pix-card {
+/* ── BOLETO CARD (new clean design) ── */
+.boleto-card {
   background: var(--surface);
   border: 1px solid var(--border-2);
   border-radius: 22px;
@@ -763,18 +763,18 @@ html,body{
   box-shadow: 0 4px 18px rgba(0,0,0,0.05);
   align-self: flex-start;
 }
-.pix-card-header {
+.boleto-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 22px;
 }
-.pix-brand-mark {
+.boleto-brand-mark {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.pix-logo {
+.boleto-logo {
   width: 36px;
   height: 36px;
   background: var(--brand);
@@ -789,18 +789,18 @@ html,body{
   letter-spacing: 0.4px;
   flex-shrink: 0;
 }
-.pix-brand-label {
+.boleto-brand-label {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
 }
-.pix-brand-sub {
+.boleto-brand-sub {
   font-size: 11px;
   color: var(--text-3);
   margin-top: 1px;
 }
-.pix-expiry {
+.boleto-expiry {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -813,11 +813,11 @@ html,body{
   border-radius: 7px;
   flex-shrink: 0;
 }
-.pix-price-hero {
+.boleto-price-hero {
   text-align: center;
   padding: 16px 0 22px;
 }
-.pix-price-eyebrow {
+.boleto-price-eyebrow {
   font-size: 10.5px;
   font-weight: 700;
   color: var(--text-3);
@@ -825,7 +825,7 @@ html,body{
   letter-spacing: 1.3px;
   margin-bottom: 8px;
 }
-.pix-price-amount {
+.boleto-price-amount {
   font-size: 40px;
   font-weight: 900;
   color: var(--text);
@@ -833,14 +833,14 @@ html,body{
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.pix-price-amount span {
+.boleto-price-amount span {
   font-size: 19px;
   font-weight: 700;
   letter-spacing: 0;
   margin-right: 3px;
   vertical-align: 4px;
 }
-.pix-code-row {
+.boleto-code-row {
   background: #F8FAFC;
   border: 1.5px solid var(--border-2);
   border-radius: 12px;
@@ -850,7 +850,7 @@ html,body{
   align-items: center;
   gap: 8px;
 }
-.pix-code-text {
+.boleto-code-text {
   flex: 1;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11.5px;
@@ -860,7 +860,7 @@ html,body{
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pix-copy-btn {
+.boleto-copy-btn {
   width: 100%;
   padding: 15px;
   background: var(--brand);
@@ -880,24 +880,24 @@ html,body{
   box-shadow: 0 4px 14px rgba(15,91,168,0.22);
   animation: pulse-brand 2.8s infinite;
 }
-.pix-copy-btn:hover {
+.boleto-copy-btn:hover {
   background: var(--brand-mid);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(15,91,168,0.28);
 }
-.pix-copy-btn:active { transform: scale(0.97); }
-.pix-copy-btn.copied {
+.boleto-copy-btn:active { transform: scale(0.97); }
+.boleto-copy-btn.copied {
   background: var(--green);
   animation: none;
   box-shadow: 0 4px 14px rgba(16,185,129,0.25);
 }
-.pix-trust-row {
+.boleto-trust-row {
   display: flex;
   align-items: center;
   padding-top: 14px;
   border-top: 1px solid var(--border-2);
 }
-.pix-trust-item {
+.boleto-trust-item {
   flex: 1;
   display: flex;
   align-items: center;
@@ -905,8 +905,8 @@ html,body{
   font-size: 11px;
   font-weight: 600;
 }
-.pix-trust-item.positive { color: var(--green-dk); }
-.pix-trust-item.neutral { color: var(--text-3); justify-content: flex-end; }
+.boleto-trust-item.positive { color: var(--green-dk); }
+.boleto-trust-item.neutral { color: var(--text-3); justify-content: flex-end; }
 
 /* ── SELLER MODAL ── */
 .seller-modal-overlay{
@@ -1352,8 +1352,7 @@ let chatUnlocked = false;
 let alertTimeout = null;
 
 // ── SOCKET.IO INTEGRATION ────────────────────────────
-const SOCKET_SERVER_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://chat-diskgas.onrender.com';
-const socket = io(SOCKET_SERVER_URL);
+const socket = io();
 const urlParams = new URLSearchParams(window.__DISKGAS_URL_PARAMS__ || window.location.search);
 const nomeFromUrl = urlParams.get('nome');
 const userId = nomeFromUrl || localStorage.getItem('chatUserId') || `user_${Date.now()}`;
@@ -1405,17 +1404,6 @@ function fuzzyMatch(text, keyword, threshold = 0.8) {
 }
 // ----------------------
 
-const STATIC_PIX_CODES = {
-  "89.90": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro520400005303986540589.905802BR592567.523.999 MATEUS SILVA D6009Sao Paulo62290525918583c6a0e04460872eb238f63049AC0", // Exemplo: Valor de R$10,00
-  "179.80": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406179.805802BR592567.523.999 MATEUS SILVA D6009Sao Paulo62290525efd3432606034494b56fcfc6d6304946E", // Exemplo: Valor de R$25,50
-  "269.70": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406269.705802BR592567.523.999 MATEUS SILVA D6009Sao Paulo62290525e9b760b5a68d415da806f75e06304A4FF", // Exemplo: Valor de R$50,00
-  "359.60": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406359.605802BR592567.523.999 MATEUS SILVA D6009Sao Paulo62290525b15cebcd30a0425e8c1b612886304F181", // Exemplo: Valor de R$10,00
-  "395.90": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406395.905802BR592567.523.999 MATEUS SILVA D6009Sao Paulo622905254dd4924eb240495ba78f82bcd63046409", // Exemplo: Valor de R$10,00
-  "189.90": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406189.905802BR592567.523.999 MATEUS SILVA D6009Sao Paulo6229052528d12e5fec6d4066ba2b863956304DDFD", // Exemplo: Valor de R$10,00
-  "791.80": "00020126780014br.gov.bcb.pix0136d68e0c60-74fe-4df0-8760-7793c80a1d000216Pagamento Seguro5204000053039865406791.805802BR592567.523.999 MATEUS SILVA D6009Sao Paulo622905259bf3d5527ef5409e86298ad4c630457CC", // Exemplo: Valor de R$10,00
-  "default": "d68e0c60-74fe-4df0-8760-7793c80a1d00" // Código PIX para valores não mapeados
-};
-
 // ── ORDER DATA FROM URL ──────────────────────────────
 function parseOrderData() {
   try {
@@ -1423,6 +1411,9 @@ function parseOrderData() {
     const productsStr = p.get('products');
         let address = p.get('address') || '';
     const cep = p.get('cep') || '';
+    const cpf = p.get('cpf') || '';
+    const email = p.get('email') || '';
+    const phone = p.get('phone') || p.get('telefone') || '';
     const deliveryTime = p.get('delivery_time') || '20–30 minutos';
     const subtotal = parseFloat(p.get('subtotal')) || 0;
 
@@ -1486,12 +1477,13 @@ function parseOrderData() {
 
         if (cep) address += `, CEP: ${cep}`;
     const nome = p.get('nome') || '';
-    return { products, productName, productQty, productPrice, location, address, deliveryTime, nome, cep };
+    return { products, productName, productQty, productPrice, location, address, deliveryTime, nome, cep, cpf, email, phone };
   } catch(e) {
-return { products:[], productName:'Botijão de Gás P13', productQty:1, productPrice:89.90, location:'sua região', address:'', deliveryTime: deliveryTime, nome:'', cep:'' };
+return { products:[], productName:'Botijão de Gás P13', productQty:1, productPrice:89.90, location:'sua região', address:'', deliveryTime:'20–30 minutos', nome:'', cep:'', cpf:'', email:'', phone:'' };
   }
 }
 const ORDER = parseOrderData();
+window.ORDER = ORDER;
 
 function updateModal(isEditing = false, customTitle = null) {
   if (isEditing) {
@@ -1864,15 +1856,19 @@ function saveChatHistory() {
     console.warn('Não foi possível salvar o histórico local do chat.', error);
   }
     const state = {
-    pixCode: window._currentPixCode || null,
+    boletoLine: window._currentBoletoLine || null,
+    boletoUrl: window._currentBoletoUrl || null,
+    boletoDueAt: window._currentBoletoDueAt || null,
+    boletoOrderId: window._currentBoletoOrderId || null,
+    boletoStatus: window._currentBoletoStatus || null,
     lojaAddress: window._lojaAddress || null,
     lastSender: lastSender,
     flowStep: window._currentFlowStep || 0,
     paymentConfirmed: window._paymentConfirmed || false,
     contactMsgSent: window._contactMsgSent || false,
-    pixCopyClicked: window._pixCopyClicked || false,
-        pixCopyReminderSent: window._pixCopyReminderSent || false,
-    pixPaymentReminderSent: window._pixPaymentReminderSent || false,
+    boletoCopyClicked: window._boletoCopyClicked || false,
+        boletoCopyReminderSent: window._boletoCopyReminderSent || false,
+    boletoPaymentReminderSent: window._boletoPaymentReminderSent || false,
     orderConfirmationShown: window._orderConfirmationShown || false
   };
   try {
@@ -2057,48 +2053,180 @@ function showOrderConfirmation() {
 }
 
 
-// ── DELIVERY STEPS / PIX ─────────────────────────────
-function showDeliverySteps(pixCode) {
+// ── DELIVERY STEPS / BOLETO ──────────────────────────
+function onlyDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function formatBoletoDueAt(value) {
+  if (!value) return 'Vencimento informado no boleto';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Vencimento informado no boleto';
+  return `Vence em ${date.toLocaleDateString('pt-BR')}`;
+}
+
+function safeBoletoUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return url.protocol === 'https:' ? url.href : '';
+  } catch (_) {
+    return '';
+  }
+}
+
+function getBoletoDataFromState() {
+  return {
+    line: window._currentBoletoLine || '',
+    url: window._currentBoletoUrl || '',
+    dueAt: window._currentBoletoDueAt || null,
+    orderId: window._currentBoletoOrderId || '',
+    status: window._currentBoletoStatus || 'pending'
+  };
+}
+
+function bindBoletoCopyButton(card, boletoLine) {
+  const copyBtn = card.querySelector('#boletoCopyBtn');
+  if (!copyBtn || !boletoLine) return;
+  copyBtn.onclick = () => {
+    window._boletoCopyClicked = true;
+    if (window._boletoCopyTimer) clearTimeout(window._boletoCopyTimer);
+    navigator.clipboard.writeText(boletoLine).catch(() => {});
+    copyBtn.classList.add('copied');
+    copyBtn.style.background = '#10B981';
+    copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Código copiado!`;
+    setTimeout(() => {
+      copyBtn.classList.remove('copied');
+      copyBtn.style.background = 'var(--brand)';
+      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar linha digitável`;
+    }, 2500);
+  };
+}
+
+function showDeliverySteps(boletoData) {
+  const data = typeof boletoData === 'string' ? { line: boletoData } : (boletoData || {});
+  const boletoLine = String(data.line || window._currentBoletoLine || '').trim();
+  if (!boletoLine) return;
+
+  const boletoUrl = safeBoletoUrl(data.url || window._currentBoletoUrl);
+  const dueLabel = formatBoletoDueAt(data.dueAt || window._currentBoletoDueAt);
   const card = document.createElement('div');
-  card.className = 'pix-card';
+  card.className = 'boleto-card';
   card.innerHTML = `
-    <div class="pix-card-header">
-      <div class="pix-brand-mark">
-        <div class="pix-logo">BOLETO</div>
-        <div><div class="pix-brand-label">Pagamento via Boleto</div><div class="pix-brand-sub">Diskgas Oficial</div></div>
+    <div class="boleto-card-header">
+      <div class="boleto-brand-mark">
+        <div class="boleto-logo">BOLETO</div>
+        <div><div class="boleto-brand-label">Pagamento via Boleto</div><div class="boleto-brand-sub">Emitido pela Pagar.me</div></div>
       </div>
-      <div class="pix-expiry"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 15:00</div>
+      <div class="boleto-expiry"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${escapeReceiptText(dueLabel)}</div>
     </div>
-    <div class="pix-price-hero">
-      <div class="pix-price-eyebrow">Valor do pedido</div>
-      <div class="pix-price-amount"><span>R$</span>${ORDER.productPrice.toFixed(2).replace('.',',')}</div>
+    <div class="boleto-price-hero">
+      <div class="boleto-price-eyebrow">Valor do pedido</div>
+      <div class="boleto-price-amount"><span>R$</span>${ORDER.productPrice.toFixed(2).replace('.',',')}</div>
     </div>
     <div style="background:#F0FDF4;border:1px solid rgba(16,185,129,.22);border-radius:12px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:11px;cursor:pointer;" onclick="openSellerModal()">
       <div style="width:34px;height:34px;background:var(--green);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 8px rgba(16,185,129,.25);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div><div style="font-size:10px;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Vendedor Autorizado</div><div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.2;">Mateus Silva.</div><div style="font-size:10.5px;color:var(--text-3);margin-top:2px;">Vendedor Oficial · Diskgás</div></div>
     </div>
-    <div class="pix-code-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><div class="pix-code-text">${pixCode.substring(0,40)}…</div></div>
-    <button class="pix-copy-btn" id="pixCopyBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código do boleto</button>
-    <div class="pix-trust-row"><div class="pix-trust-item positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Seguro</div><div class="pix-trust-item neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Pagamento seguro</div></div>
+    <div class="boleto-code-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><div class="boleto-code-text">${escapeReceiptText(boletoLine)}</div></div>
+    <button class="boleto-copy-btn" id="boletoCopyBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg> Copiar linha digitável</button>
+    ${boletoUrl ? `<a class="boleto-copy-btn" href="${escapeReceiptText(boletoUrl)}" target="_blank" rel="noopener noreferrer" style="margin-top:8px;text-decoration:none;background:#fff;color:var(--brand);border:1.5px solid var(--brand);box-shadow:none;">Abrir boleto</a>` : ''}
+    <div class="boleto-trust-row"><div class="boleto-trust-item positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Seguro</div><div class="boleto-trust-item neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Processado pela Pagar.me</div></div>
   `;
   msgsEl.appendChild(card);
+  bindBoletoCopyButton(card, boletoLine);
   scrollDown();
-  const copyBtn = card.querySelector('#pixCopyBtn');
-  if (copyBtn) {
-    copyBtn.onclick = () => {
-      window._pixCopyClicked = true;
-      if (window._pixCopyTimer) clearTimeout(window._pixCopyTimer);
-      navigator.clipboard.writeText(pixCode).catch(()=>{});
-      copyBtn.classList.add('copied');
-      copyBtn.style.background = '#10B981';
-      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Código copiado!`;
-      setTimeout(()=>{
-        copyBtn.classList.remove('copied');
-        copyBtn.style.background = 'var(--brand)';
-        copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código do boleto`;
-      }, 2500);
-    };
+}
+
+function getPaymentItems() {
+  if (Array.isArray(ORDER.products) && ORDER.products.length) {
+    return ORDER.products.map((product, index) => ({
+      title: product.n || `Item ${index + 1}`,
+      unitPrice: Number(product.v),
+      quantity: Number(product.q || 1),
+      code: `ITEM-${index + 1}`
+    }));
   }
+  return [{
+    title: ORDER.productName || 'Pedido Diskgas',
+    unitPrice: Number(ORDER.productPrice),
+    quantity: 1,
+    code: 'ITEM-1'
+  }];
+}
+
+function getBoletoIdempotencyKey() {
+  const fingerprintSource = JSON.stringify({
+    nome: ORDER.nome,
+    cpf: onlyDigits(ORDER.cpf),
+    amount: Number(ORDER.productPrice).toFixed(2),
+    address: ORDER.address,
+    cep: ORDER.cep,
+    items: getPaymentItems()
+  });
+  let hash = 2166136261;
+  for (let index = 0; index < fingerprintSource.length; index += 1) {
+    hash ^= fingerprintSource.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const storageKey = `dg_boleto_idempotency_${(hash >>> 0).toString(16)}`;
+  let key = sessionStorage.getItem(storageKey);
+  if (!key) {
+    const randomPart = window.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    key = `diskgas_${randomPart.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+    sessionStorage.setItem(storageKey, key);
+  }
+  return key;
+}
+
+function ensureCustomerCpf() {
+  let cpf = onlyDigits(ORDER.cpf);
+  if (cpf.length === 11) return cpf;
+  const informed = window.prompt('Para emitir o boleto registrado, informe o CPF do titular (somente números):', '');
+  if (informed === null) throw new Error('A emissão foi cancelada porque o CPF não foi informado.');
+  cpf = onlyDigits(informed);
+  if (cpf.length !== 11) throw new Error('Informe um CPF válido com 11 dígitos para emitir o boleto.');
+  ORDER.cpf = cpf;
+  return cpf;
+}
+
+async function generateBoleto() {
+  const customerDocument = ensureCustomerCpf();
+  const idempotencyKey = getBoletoIdempotencyKey();
+  const response = await fetch('/api/boleto', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': idempotencyKey
+    },
+    body: JSON.stringify({
+      amount: Number(ORDER.productPrice),
+      items: getPaymentItems(),
+      customer: {
+        name: ORDER.nome,
+        document: customerDocument,
+        email: ORDER.email || undefined,
+        phone: ORDER.phone || undefined
+      },
+      shipping: {
+        address: ORDER.address,
+        cep: ORDER.cep
+      },
+      idempotencyKey
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.line) {
+    throw new Error(data.error || 'Não foi possível emitir o boleto agora. Tente novamente em instantes.');
+  }
+
+  window._currentBoletoLine = data.line;
+  window._currentBoletoUrl = data.url || '';
+  window._currentBoletoDueAt = data.dueAt || null;
+  window._currentBoletoOrderId = data.orderId || '';
+  window._currentBoletoStatus = data.status || 'pending';
+  saveChatHistory();
+  return data;
 }
 
 // ── TYPING STATE ─────────────────────────────────────
@@ -2175,62 +2303,46 @@ await addMsg(`Você verá 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮 como ben
   if (window._currentFlowStep === 6) {
     window._currentFlowStep = 7; saveChatHistory();
     const sp = addSpinner("Preparando boleto...");
-    let pixCode = window._currentPixCode;
-const pixStartTime = Date.now();
-if (!pixCode) {
-  const productPriceFormatted = ORDER.productPrice.toFixed(2); // Formata o valor para duas casas decimais
-  pixCode = STATIC_PIX_CODES[productPriceFormatted] || STATIC_PIX_CODES["default"];
-  window._currentPixCode = pixCode;
-}
-    const elapsed = Date.now() - pixStartTime;
+    const boletoStartTime = Date.now();
+    let boletoData = getBoletoDataFromState();
+
+    try {
+      if (!boletoData.line) boletoData = await generateBoleto();
+    } catch (error) {
+      sp.remove();
+      addSys('Não foi possível gerar o boleto', 'brand');
+      await agentSay(error.message || 'Não foi possível emitir o boleto agora. Tente novamente em instantes.', true, true);
+      window._currentFlowStep = 6;
+      saveChatHistory();
+      return;
+    }
+
+    const elapsed = Date.now() - boletoStartTime;
     if (elapsed < 7000) await pause(7000 - elapsed);
     sp.remove();
-addSys('Boleto gerado com sucesso', 'ok');
-sendTranscript();
+    addSys('Boleto gerado com sucesso', 'ok');
+    sendTranscript();
 
-// Removida a pausa de 1000ms para o efeito de digitação começar imediatamente
-// Adicionado o parâmetro 'true' no final para pular o atraso inicial do agentSay
-await agentSay(`Após o pagamento o prazo de entrega é de 20-30 minutos. 😃`, true, true);
-
-
-await pause(1000); // Pequena pausa para naturalidade
-
-// AGORA exibe o card do Pix
-showDeliverySteps(pixCode);
-    
-        // Pausa após exibir o código PIX
+    await agentSay(`Após o pagamento o prazo de entrega é de 20-30 minutos. 😃`, true, true);
+    await pause(1000);
+    showDeliverySteps(boletoData);
     await pause(600);
-    
-    // 1. Envia a mensagem PRIMEIRO
-    // 1. Envia a mensagem PRIMEIRO
+
     const primeiroNome = (ORDER.nome || "").split(" ")[0];
     const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
     await agentSay(`Estou acompanhando aqui${saudacaoNome}, após o pagamento o pedido é aprovado automaticamente. 😃`, true, true);
-    
-// Adiciona um atraso de 300ms antes de mostrar o card
-await pause(300);
+    await pause(300);
+    addProfessionalStatusCard();
 
-// 3. Adiciona o card de status de pagamento DEPOIS da mensagem
-addProfessionalStatusCard();
-
-
-    
-    // 4. Finaliza o passo do fluxo
-    window._currentFlowStep = 9; 
+    window._currentFlowStep = 9;
     saveChatHistory();
 
-    // Timer de segurança (reexibe o card após 4 min se o usuário ainda não pagou)
     setTimeout(() => {
-      if (!window._paymentConfirmed) {
-        // Só adiciona se o card não estiver visível (evita duplicados)
-        if (!document.querySelector('.payment-status-card')) {
-            addProfessionalStatusCard();
-            saveChatHistory();
-        }
+      if (!window._paymentConfirmed && !document.querySelector('.payment-status-card')) {
+        addProfessionalStatusCard();
+        saveChatHistory();
       }
     }, 4 * 60 * 1000);
-
-
   }
 }
 
@@ -2346,7 +2458,7 @@ PASSO ATUAL: ${currentFlowStep}
     const mencionaPixOuCartao = ["pix", "chave pix", "qr code", "qrcode", "cartão", "cartao", "maquininha"].some(k => msgAnalise.includes(k));
 
     // Só reexibe o boleto se houver a combinação (A + B), sem confundir PIX ou cartão com o método principal
-    if (window._currentPixCode && !mencionaPixOuCartao && temA && temB) return 'BOLETO_PROBLEM';
+    if (window._currentBoletoLine && !mencionaPixOuCartao && temA && temB) return 'BOLETO_PROBLEM';
 
     
     return data.reply || 'Como posso te ajudar com seu pedido?';
@@ -2472,26 +2584,19 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   // Exibir resposta do ChatGPT como mensagem do agente
   // Exibir resposta do ChatGPT como mensagem do agente
       if (aiResponse === 'BOLETO_PROBLEM') {
-    const pixDefault = STATIC_PIX_CODES["default"];
-    if (pixDefault) {
-      // 1. Envia a instrução do PIX
-      await agentSay('Basta copiar o código do boleto abaixo e pagar pelo app do seu banco 😄', true, true);
+    if (window._currentBoletoLine) {
+      await agentSay('Basta copiar a linha digitável do boleto abaixo e pagar pelo app do seu banco 😄', true, true);
       await pause(1000);
-      
-      // 2. Reenvia o bloco do PIX (sempre o default)
-      showDeliverySteps(pixDefault);
+      showDeliverySteps(getBoletoDataFromState());
       await pause(800);
 
-      // 3. Envia a mensagem de acompanhamento personalizada
       const primeiroNome = (window.ORDER && window.ORDER.nome) ? window.ORDER.nome.split(" ")[0] : "";
       const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
       await agentSay(`Estou acompanhando aqui${saudacaoNome}, após o pagamento o pedido é aprovado automaticamente. 😃`, true, true);
-      
-      // 4. Reenvia o card de status de pagamento
       await pause(400);
       addProfessionalStatusCard();
     } else {
-      await agentSay('Não consegui localizar o código do boleto. Por favor, tente novamente.', true, true);
+      await agentSay('Não consegui localizar a linha digitável do boleto. Recarregue a página para tentar emitir novamente.', true, true);
     }
     saveChatHistory();
     updateSendButtonState();
@@ -2550,22 +2655,23 @@ function lockBackButton() {
     const state = JSON.parse(savedState);
         if (state.lojaAddress) window._lojaAddress = state.lojaAddress;
     window._orderConfirmationShown = state.orderConfirmationShown || false;
-    window._currentPixCode = state.pixCode; window._pixCopyTimer = null; window._pixPaymentTimer = null; window._pixCopyReminderSent = false; window._pixPaymentReminderSent = false;
-    lastSender = state.lastSender; window._currentFlowStep = state.flowStep || 0; window._paymentConfirmed = state.paymentConfirmed || false; window._contactMsgSent = state.contactMsgSent || false; window._pixCopyClicked = state.pixCopyClicked || false; window._pixCopyReminderSent = state.pixCopyReminderSent || false; window._pixPaymentReminderSent = state.pixPaymentReminderSent || false;
+    window._currentBoletoLine = state.boletoLine || null;
+    window._currentBoletoUrl = state.boletoUrl || '';
+    window._currentBoletoDueAt = state.boletoDueAt || null;
+    window._currentBoletoOrderId = state.boletoOrderId || '';
+    window._currentBoletoStatus = state.boletoStatus || 'pending';
+    window._boletoCopyTimer = null; window._boletoPaymentTimer = null; window._boletoCopyReminderSent = false; window._boletoPaymentReminderSent = false;
+    lastSender = state.lastSender; window._currentFlowStep = state.flowStep || 0; window._paymentConfirmed = state.paymentConfirmed || false; window._contactMsgSent = state.contactMsgSent || false; window._boletoCopyClicked = state.boletoCopyClicked || false; window._boletoCopyReminderSent = state.boletoCopyReminderSent || false; window._boletoPaymentReminderSent = state.boletoPaymentReminderSent || false;
     msgsEl.innerHTML = savedHTML;
-    const pixCopyBtn = msgsEl.querySelector('#pixCopyBtn');
-    if (pixCopyBtn && window._currentPixCode) {
-        pixCopyBtn.onclick = () => {
-          window._pixCopyClicked = true; if (window._pixCopyTimer) clearTimeout(window._pixCopyTimer);
-          navigator.clipboard.writeText(window._currentPixCode).catch(()=>{});
-        pixCopyBtn.classList.add('copied');
-        pixCopyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Código copiado!`;
-        setTimeout(()=>{
-          pixCopyBtn.classList.remove('copied');
-          pixCopyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código do boleto`;
-        }, 2500);
-      };
+    msgsEl.querySelectorAll('.pix-card').forEach(card => card.remove());
+    if (!window._currentBoletoLine && state.pixCode && window._currentFlowStep >= 7 && window._currentFlowStep <= 9) {
+      msgsEl.querySelectorAll('.payment-status-card').forEach(card => card.remove());
+      window._currentFlowStep = 6;
     }
+    msgsEl.querySelectorAll('#boletoCopyBtn').forEach(button => {
+      const card = button.closest('.boleto-card');
+      if (card && window._currentBoletoLine) bindBoletoCopyButton(card, window._currentBoletoLine);
+    });
     const btnCorrect = msgsEl.querySelector('#btnCorrect');
     const btnChange = msgsEl.querySelector('#btnChange');
     if (btnCorrect && btnChange && window._currentFlowStep === 3) {
@@ -2599,7 +2705,7 @@ function lockBackButton() {
 (function () {
   const REDIRECT_URL    = 'https://concluerror.onrender.com';
   const MS_FIRST_ACCESS = 25 * 60 * 1000;
-  const MS_AFTER_PIX    = 15 * 60 * 1000;
+  const MS_AFTER_BOLETO    = 15 * 60 * 1000;
   const KEY_FA  = 'dg_fa'; const KEY_PT  = 'dg_pt';
   let _timer = null;
   function startTimer(ms) {
@@ -2613,9 +2719,9 @@ function lockBackButton() {
   startTimer(remainFA);
   setInterval(() => {
     let pt = localStorage.getItem(KEY_PT);
-    if (!pt && window._currentPixCode) {
+    if (!pt && window._currentBoletoLine) {
       pt = Date.now(); localStorage.setItem(KEY_PT, pt);
-      let remainPT = MS_AFTER_PIX; startTimer(remainPT);
+      let remainPT = MS_AFTER_BOLETO; startTimer(remainPT);
     }
   }, 2000);
 })();
