@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: checkout-pagarme-boleto
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PAGARME_SECRET_KEY
+        sync: false
+      - key: PAGARME_API_URL
+        value: https://api.pagar.me/core/v5
+      - key: PAGARME_BOLETO_DUE_DAYS
+        value: 3
+      - key: PAGARME_BOLETO_INSTRUCTIONS
+        value: Pagar até o vencimento.
+      - key: PAGARME_CUSTOMER_EMAIL
+        sync: false
+      - key: PAGARME_CUSTOMER_PHONE
+        sync: false
+      - key: PAGARME_CUSTOMER_DOCUMENT
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-3.5-turbo
