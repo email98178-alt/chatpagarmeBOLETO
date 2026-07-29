@@ -2268,7 +2268,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     const localFinal = localBase === 'sua região' ? localBase : `${localBase} e região`;
     await agentSay(`Certo, já vou enviar o boleto, um segundo...`);
     await pause(900); setTyping(true); await pause(5500); setTyping(false);
-await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela sua entrega 😃`, 'agent', true);
+await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela entrega 😃`, 'agent', true);
     await pause(600);
   }
   if (window._currentFlowStep === 6) {
