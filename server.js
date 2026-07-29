@@ -905,7 +905,7 @@ function withNextBillingCompany(idempotencyKey, callback) {
 function normalizeItems(rawItems, fallbackAmountInCents) {
   const source = Array.isArray(rawItems) && rawItems.length
     ? rawItems.slice(0, 100)
-    : [{ title: 'Pedido Diskgas', unitPrice: fallbackAmountInCents / 100, quantity: 1 }];
+    : [{ title: 'Pedido', unitPrice: fallbackAmountInCents / 100, quantity: 1 }];
 
   const items = source.map((item, index) => {
     const quantity = normalizeInteger(item.quantity ?? item.q, 1, 1, 999);
@@ -938,12 +938,12 @@ function normalizeIdempotencyKey(value) {
 
 function orderCodeFromIdempotencyKey(idempotencyKey) {
   const suffix = crypto.createHash('sha256').update(idempotencyKey).digest('hex').slice(0, 24);
-  return `diskgas-${suffix}`;
+  return `pedido-${suffix}`;
 }
 
 function fallbackIdempotencyKey(idempotencyKey) {
   const suffix = crypto.createHash('sha256').update(`default:${idempotencyKey}`).digest('hex').slice(0, 32);
-  return `diskgas_default_${suffix}`;
+  return `pedido_default_${suffix}`;
 }
 
 function buildCompanyCustomer(profile, address) {
@@ -994,7 +994,7 @@ function buildBoletoPayload({
       }
     ],
     metadata: {
-      source: 'diskgas-chat-checkout',
+      source: 'pedido-chat-checkout',
       billing_profile_index: fallbackUsed ? 'default' : String(profileIndex + 1),
       billing_address_source: addressSource,
       billing_idempotency_retry: String(isRetry),
@@ -1158,9 +1158,9 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
   if (calculatedAmount !== amountInCents) {
     items = [{
       amount: amountInCents,
-      description: 'Pedido Diskgas',
+      description: 'Pedido',
       quantity: 1,
-      code: 'PEDIDO-DISKGAS'
+      code: 'PEDIDO'
     }];
   }
 
