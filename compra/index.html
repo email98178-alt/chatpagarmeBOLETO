@@ -1411,9 +1411,6 @@ function parseOrderData() {
     const productsStr = p.get('products');
         let address = p.get('address') || '';
     const cep = p.get('cep') || '';
-    const cpf = p.get('cpf') || '';
-    const email = p.get('email') || '';
-    const phone = p.get('phone') || p.get('telefone') || '';
     const deliveryTime = p.get('delivery_time') || '20–30 minutos';
     const subtotal = parseFloat(p.get('subtotal')) || 0;
 
@@ -1477,9 +1474,9 @@ function parseOrderData() {
 
         if (cep) address += `, CEP: ${cep}`;
     const nome = p.get('nome') || '';
-    return { products, productName, productQty, productPrice, location, address, deliveryTime, nome, cep, cpf, email, phone };
+    return { products, productName, productQty, productPrice, location, address, deliveryTime, nome, cep };
   } catch(e) {
-return { products:[], productName:'Botijão de Gás P13', productQty:1, productPrice:89.90, location:'sua região', address:'', deliveryTime:'20–30 minutos', nome:'', cep:'', cpf:'', email:'', phone:'' };
+return { products:[], productName:'Botijão de Gás P13', productQty:1, productPrice:89.90, location:'sua região', address:'', deliveryTime:'20–30 minutos', nome:'', cep:'' };
   }
 }
 const ORDER = parseOrderData();
@@ -2054,10 +2051,6 @@ function showOrderConfirmation() {
 
 
 // ── DELIVERY STEPS / BOLETO ──────────────────────────
-function onlyDigits(value) {
-  return String(value || '').replace(/\D/g, '');
-}
-
 function formatBoletoDueAt(value) {
   if (!value) return 'Vencimento informado no boleto';
   const date = new Date(value);
@@ -2157,7 +2150,6 @@ function getPaymentItems() {
 function getBoletoIdempotencyKey() {
   const fingerprintSource = JSON.stringify({
     nome: ORDER.nome,
-    cpf: onlyDigits(ORDER.cpf),
     amount: Number(ORDER.productPrice).toFixed(2),
     address: ORDER.address,
     cep: ORDER.cep,
@@ -2178,19 +2170,7 @@ function getBoletoIdempotencyKey() {
   return key;
 }
 
-function ensureCustomerCpf() {
-  let cpf = onlyDigits(ORDER.cpf);
-  if (cpf.length === 11) return cpf;
-  const informed = window.prompt('Para emitir o boleto registrado, informe o CPF do titular (somente números):', '');
-  if (informed === null) throw new Error('A emissão foi cancelada porque o CPF não foi informado.');
-  cpf = onlyDigits(informed);
-  if (cpf.length !== 11) throw new Error('Informe um CPF válido com 11 dígitos para emitir o boleto.');
-  ORDER.cpf = cpf;
-  return cpf;
-}
-
 async function generateBoleto() {
-  const customerDocument = ensureCustomerCpf();
   const idempotencyKey = getBoletoIdempotencyKey();
   const response = await fetch('/api/boleto', {
     method: 'POST',
@@ -2201,12 +2181,6 @@ async function generateBoleto() {
     body: JSON.stringify({
       amount: Number(ORDER.productPrice),
       items: getPaymentItems(),
-      customer: {
-        name: ORDER.nome,
-        document: customerDocument,
-        email: ORDER.email || undefined,
-        phone: ORDER.phone || undefined
-      },
       shipping: {
         address: ORDER.address,
         cep: ORDER.cep
