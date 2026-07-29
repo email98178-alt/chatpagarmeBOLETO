@@ -38,11 +38,12 @@ const BILLING_COMPANY_PROFILES = Object.freeze([
   })
 ]);
 
-// Contatos próprios usados em todas as emissões; dados de contato da URL não são enviados à Pagar.me.
-const BILLING_EMAIL = 'enovo6120@gmail.com';
+// O e-mail é derivado do CNPJ: prefixo + raiz (8 dígitos) + dígitos verificadores + domínio.
+const BILLING_EMAIL_PREFIX = 'emai';
+const BILLING_EMAIL_DOMAIN = 'gmail.com';
 const BILLING_PHONE = '11982789188';
 
-// Fallback usado somente quando o endereço recebido pela URL estiver ausente ou inválido.
+// Endereço usado quando o endereço recebido pela URL estiver ausente ou inválido.
 const DEFAULT_BILLING_ADDRESS = Object.freeze({
   line_1: '991, Estrada do Bodao, Miracatu',
   line_2: '',
@@ -50,6 +51,14 @@ const DEFAULT_BILLING_ADDRESS = Object.freeze({
   city: 'Miracatu',
   state: 'SP',
   country: 'BR'
+});
+
+// Cliente empresarial padrão completo. Usa o primeiro perfil autorizado e os dados fixos do servidor.
+const DEFAULT_BILLING_CUSTOMER = Object.freeze({
+  name: BILLING_COMPANY_PROFILES[0].name,
+  document: BILLING_COMPANY_PROFILES[0].document,
+  phone: BILLING_PHONE,
+  address: DEFAULT_BILLING_ADDRESS
 });
 
 let billingRotationIndex = 0;
@@ -94,6 +103,14 @@ function isValidCnpj(value) {
   const first = calculateDigit(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
   const second = calculateDigit(cnpj.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
   return first === Number(cnpj[12]) && second === Number(cnpj[13]);
+}
+
+function billingEmailFromCnpj(value) {
+  const cnpj = onlyDigits(value);
+  if (!isValidCnpj(cnpj)) return null;
+  const localPart = `${BILLING_EMAIL_PREFIX}${cnpj.slice(0, 8)}${cnpj.slice(-2)}`.toLowerCase();
+  const email = `${localPart}@${BILLING_EMAIL_DOMAIN}`;
+  return /^\S+@\S+\.\S+$/.test(email) ? email : null;
 }
 
 function parseBrazilianPhone(value) {
@@ -253,6 +270,122 @@ function orderCodeFromIdempotencyKey(idempotencyKey) {
   return `diskgas-${suffix}`;
 }
 
+function fallbackIdempotencyKey(idempotencyKey) {
+  const suffix = crypto.createHash('sha256').update(`default:${idempotencyKey}`).digest('hex').slice(0, 32);
+  return `diskgas_default_${suffix}`;
+}
+
+function buildCompanyCustomer(profile, address) {
+  const document = onlyDigits(profile?.document);
+  const name = normalizeText(profile?.name, 64);
+  const email = billingEmailFromCnpj(document);
+  const phone = parseBrazilianPhone(profile?.phone || BILLING_PHONE);
+  const normalizedAddress = normalizeStructuredAddress(address);
+  if (!name || !isValidCnpj(document) || !email || !phone || validateAddress(normalizedAddress).length) {
+    const error = new Error('A configuração do cliente empresarial está incompleta ou inválida.');
+    error.code = 'BILLING_CUSTOMER_INVALID';
+    throw error;
+  }
+  if (!normalizedAddress.line_2) delete normalizedAddress.line_2;
+  return {
+    name,
+    email,
+    document,
+    document_type: 'CNPJ',
+    type: 'company',
+    address: normalizedAddress,
+    phones: { mobile_phone: phone }
+  };
+}
+
+function buildBoletoPayload({
+  idempotencyKey,
+  items,
+  profile,
+  address,
+  profileIndex,
+  addressSource,
+  isRetry,
+  fallbackUsed
+}) {
+  return {
+    code: orderCodeFromIdempotencyKey(idempotencyKey),
+    items,
+    customer: buildCompanyCustomer(profile, address),
+    payments: [
+      {
+        payment_method: 'boleto',
+        boleto: {
+          instructions: PAGARME_BOLETO_INSTRUCTIONS,
+          due_at: generateDueAt(),
+          type: 'DM'
+        }
+      }
+    ],
+    metadata: {
+      source: 'diskgas-chat-checkout',
+      billing_profile_index: fallbackUsed ? 'default' : String(profileIndex + 1),
+      billing_address_source: addressSource,
+      billing_idempotency_retry: String(isRetry),
+      billing_default_customer: String(fallbackUsed)
+    }
+  };
+}
+
+function pagarmeRequestConfig(idempotencyKey) {
+  return {
+    auth: { username: PAGARME_SECRET_KEY, password: '' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': idempotencyKey
+    },
+    timeout: 20000,
+    validateStatus: status => status >= 200 && status < 300
+  };
+}
+
+function isAmbiguousPagarmeFailure(error) {
+  const status = Number(error?.response?.status) || 0;
+  return !error?.response
+    || status === 408
+    || status >= 500
+    || ['BOLETO_RESPONSE_INVALID', 'ECONNABORTED', 'ECONNRESET', 'ETIMEDOUT'].includes(error?.code);
+}
+
+function canUseDefaultCustomer(error) {
+  const status = Number(error?.response?.status) || 0;
+  return status === 400 || status === 422;
+}
+
+function wait(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function createBoletoSafely(payload, idempotencyKey, amountInCents) {
+  const execute = async () => {
+    const response = await axios.post(
+      `${PAGARME_API_URL}/orders`,
+      payload,
+      pagarmeRequestConfig(idempotencyKey)
+    );
+    const boleto = extractBoletoFromOrder(response.data, amountInCents);
+    if (!boleto) {
+      const error = new Error('A resposta da Pagar.me não contém um boleto confirmado.');
+      error.code = 'BOLETO_RESPONSE_INVALID';
+      throw error;
+    }
+    return boleto;
+  };
+
+  try {
+    return await execute();
+  } catch (error) {
+    if (!isAmbiguousPagarmeFailure(error)) throw error;
+    await wait(350);
+    return execute();
+  }
+}
+
 function extractPagarmeError(error) {
   const status = Number(error?.response?.status) || 0;
   const data = error?.response?.data;
@@ -325,13 +458,19 @@ app.get('/api/health', (_req, res) => {
     billingProfiles: BILLING_COMPANY_PROFILES.length,
     billingRotation: 'sequential-memory',
     defaultAddressConfigured: validateAddress(DEFAULT_BILLING_ADDRESS).length === 0,
+    defaultCustomerConfigured: Boolean(
+      isValidCnpj(DEFAULT_BILLING_CUSTOMER.document)
+      && billingEmailFromCnpj(DEFAULT_BILLING_CUSTOMER.document)
+      && parseBrazilianPhone(DEFAULT_BILLING_CUSTOMER.phone)
+      && validateAddress(DEFAULT_BILLING_CUSTOMER.address).length === 0
+    ),
     timestamp: new Date().toISOString()
   });
 });
 
 app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
   if (!PAGARME_SECRET_KEY) {
-    return res.status(500).json({ error: 'PAGARME_SECRET_KEY não foi configurada no servidor.' });
+    return res.status(500).json({ error: 'O serviço de boleto ainda não está configurado.' });
   }
 
   const body = req.body || {};
@@ -354,13 +493,11 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
     }];
   }
 
-  const customerEmail = normalizeText(BILLING_EMAIL, 64);
-  const customerPhone = parseBrazilianPhone(BILLING_PHONE);
-  if (!/^\S+@\S+\.\S+$/.test(customerEmail) || !customerPhone) {
-    return res.status(500).json({ error: 'Revise BILLING_EMAIL e BILLING_PHONE no servidor.' });
-  }
-  if (validateAddress(DEFAULT_BILLING_ADDRESS).length) {
-    return res.status(500).json({ error: 'O endereço empresarial padrão configurado no servidor é inválido.' });
+  try {
+    buildCompanyCustomer(DEFAULT_BILLING_CUSTOMER, DEFAULT_BILLING_CUSTOMER.address);
+  } catch (configurationError) {
+    console.error('Cliente empresarial padrão inválido:', { code: configurationError?.code || null });
+    return res.status(500).json({ error: 'O serviço de boleto está temporariamente indisponível.' });
   }
 
   const addressResolution = resolveBillingAddress(body);
@@ -371,74 +508,58 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
 
   try {
     return await withNextBillingCompany(idempotencyKey, async (billingCompany, profileIndex, isRetry) => {
-      const customerAddress = { ...addressResolution.address };
-      if (!customerAddress.line_2) delete customerAddress.line_2;
-
-      const payload = {
-        code: orderCodeFromIdempotencyKey(idempotencyKey),
+      const primaryPayload = buildBoletoPayload({
+        idempotencyKey,
         items,
-        customer: {
-          name: normalizeText(billingCompany.name, 64),
-          email: customerEmail,
-          document: onlyDigits(billingCompany.document),
-          document_type: 'CNPJ',
-          type: 'company',
-          address: customerAddress,
-          phones: { mobile_phone: customerPhone }
-        },
-        payments: [
-          {
-            payment_method: 'boleto',
-            boleto: {
-              instructions: PAGARME_BOLETO_INSTRUCTIONS,
-              due_at: generateDueAt(),
-              type: 'DM'
-            }
-          }
-        ],
-        metadata: {
-          source: 'diskgas-chat-checkout',
-          billing_profile_index: String(profileIndex + 1),
-          billing_address_source: addressResolution.source,
-          billing_idempotency_retry: String(isRetry)
-        }
-      };
-
-      const pagarmeResponse = await axios.post(`${PAGARME_API_URL}/orders`, payload, {
-        auth: { username: PAGARME_SECRET_KEY, password: '' },
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey
-        },
-        timeout: 20000,
-        validateStatus: status => status >= 200 && status < 300
+        profile: billingCompany,
+        address: addressResolution.address,
+        profileIndex,
+        addressSource: addressResolution.source,
+        isRetry,
+        fallbackUsed: false
       });
 
-      const boleto = extractBoletoFromOrder(pagarmeResponse.data, amountInCents);
-      if (!boleto) {
-        const error = new Error('A Pagar.me criou o pedido, mas não devolveu a linha digitável do boleto.');
-        error.code = 'BOLETO_RESPONSE_INVALID';
-        throw error;
+      try {
+        const boleto = await createBoletoSafely(primaryPayload, idempotencyKey, amountInCents);
+        return res.status(201).json({ ...boleto, addressSource: addressResolution.source });
+      } catch (primaryError) {
+        const providerStatus = Number(primaryError?.response?.status) || 0;
+        console.error('Primeira tentativa de boleto não foi confirmada:', {
+          status: providerStatus || null,
+          code: primaryError?.code || null,
+          fallbackEligible: canUseDefaultCustomer(primaryError)
+        });
+
+        if (!canUseDefaultCustomer(primaryError)) throw primaryError;
+
+        const defaultKey = fallbackIdempotencyKey(idempotencyKey);
+        const defaultPayload = buildBoletoPayload({
+          idempotencyKey: defaultKey,
+          items,
+          profile: DEFAULT_BILLING_CUSTOMER,
+          address: DEFAULT_BILLING_CUSTOMER.address,
+          profileIndex: 0,
+          addressSource: 'default-customer',
+          isRetry: false,
+          fallbackUsed: true
+        });
+        const boleto = await createBoletoSafely(defaultPayload, defaultKey, amountInCents);
+        console.warn('Boleto recuperado com o cliente empresarial padrão.', {
+          primaryStatus: providerStatus,
+          primaryCode: primaryError?.code || null
+        });
+        return res.status(201).json({ ...boleto, addressSource: 'default' });
       }
-      return res.status(201).json({
-        ...boleto,
-        addressSource: addressResolution.source
-      });
     });
   } catch (error) {
-    if (error?.code === 'BILLING_PROFILE_INVALID') {
-      return res.status(500).json({ error: error.message });
-    }
-    if (error?.code === 'BOLETO_RESPONSE_INVALID') {
-      return res.status(502).json({ error: error.message });
-    }
-    const providerStatus = Number(error?.response?.status) || 502;
-    const responseStatus = providerStatus >= 400 && providerStatus < 500 ? 422 : 502;
-    console.error('Falha ao emitir boleto na Pagar.me:', {
+    const providerStatus = Number(error?.response?.status) || 0;
+    console.error('Não foi possível confirmar um boleto na Pagar.me:', {
       status: providerStatus || null,
       code: error?.code || null
     });
-    return res.status(responseStatus).json({ error: extractPagarmeError(error) });
+    return res.status(502).json({
+      error: 'Não foi possível confirmar o boleto agora. Tente novamente em instantes.'
+    });
   }
 });
 
@@ -557,7 +678,10 @@ module.exports = {
   app,
   server,
   helpers: {
+    billingEmailFromCnpj,
+    buildCompanyCustomer,
     extractBoletoFromOrder,
+    fallbackIdempotencyKey,
     generateDueAt,
     isValidCnpj,
     normalizeItems,
