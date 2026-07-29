@@ -26,22 +26,18 @@ const PAGARME_BOLETO_DUE_DAYS = normalizeInteger(process.env.PAGARME_BOLETO_DUE_
 const PAGARME_BOLETO_INSTRUCTIONS = String(
   process.env.PAGARME_BOLETO_INSTRUCTIONS || 'Pagar até o vencimento.'
 ).trim().slice(0, 255);
-// Perfis autorizados pelo responsável da integração. Edite esta lista para incluir ou remover CNPJs.
-const BILLING_COMPANY_PROFILES = Object.freeze([
-  Object.freeze({
-    name: '57.427.698 LUCAS ALVES SOUZA',
-    document: '57427698000143'
-  }),
-  Object.freeze({
-    name: '65.909.981 ADRIANO PEREIRA DOS SANTOS',
-    document: '65909981000130'
-  })
+// Adicione ou remova empresas usando exatamente uma linha por perfil: 'CNPJ, RAZAO SOCIAL'.
+const BILLING_COMPANY_LIST = Object.freeze([
+  '57.427.698/0001-43, 57.427.698 LUCAS ALVES SOUZA',
+  '65.909.981/0001-30, 65.909.981 ADRIANO PEREIRA DOS SANTOS'
 ]);
+const BILLING_COMPANY_PROFILES = Object.freeze(parseBillingCompanyList(BILLING_COMPANY_LIST));
 
-// O e-mail é derivado do CNPJ: prefixo + raiz (8 dígitos) + dígitos verificadores + domínio.
+// E-mail e telefone são derivados do CNPJ em tempo de execução; não há contatos por perfil na lista.
 const BILLING_EMAIL_PREFIX = 'emai';
 const BILLING_EMAIL_DOMAIN = 'gmail.com';
-const BILLING_PHONE = '11982789188';
+const BILLING_PHONE_AREA_CODE = '11';
+const BILLING_PHONE_MOBILE_PREFIX = '9';
 
 // Endereço usado quando o endereço recebido pela URL estiver ausente ou inválido.
 const DEFAULT_BILLING_ADDRESS = Object.freeze({
@@ -53,11 +49,10 @@ const DEFAULT_BILLING_ADDRESS = Object.freeze({
   country: 'BR'
 });
 
-// Cliente empresarial padrão completo. Usa o primeiro perfil autorizado e os dados fixos do servidor.
+// Cliente empresarial padrão: primeiro item da lista; contatos são derivados no momento da emissão.
 const DEFAULT_BILLING_CUSTOMER = Object.freeze({
   name: BILLING_COMPANY_PROFILES[0].name,
   document: BILLING_COMPANY_PROFILES[0].document,
-  phone: BILLING_PHONE,
   address: DEFAULT_BILLING_ADDRESS
 });
 
@@ -105,12 +100,40 @@ function isValidCnpj(value) {
   return first === Number(cnpj[12]) && second === Number(cnpj[13]);
 }
 
+function parseBillingCompanyList(lines) {
+  if (!Array.isArray(lines) || lines.length === 0) {
+    const error = new Error('A lista empresarial precisa ter pelo menos uma linha.');
+    error.code = 'BILLING_LIST_EMPTY';
+    throw error;
+  }
+
+  return lines.map((line, index) => {
+    const text = String(line || '').trim();
+    const separatorIndex = text.indexOf(',');
+    const document = onlyDigits(separatorIndex >= 0 ? text.slice(0, separatorIndex) : '');
+    const name = normalizeText(separatorIndex >= 0 ? text.slice(separatorIndex + 1) : '', 64);
+    if (!isValidCnpj(document) || name.length < 2) {
+      const error = new Error(`Linha empresarial inválida na posição ${index + 1}. Use 'CNPJ, RAZAO SOCIAL'.`);
+      error.code = 'BILLING_LIST_INVALID';
+      throw error;
+    }
+    return Object.freeze({ document, name });
+  });
+}
+
 function billingEmailFromCnpj(value) {
   const cnpj = onlyDigits(value);
   if (!isValidCnpj(cnpj)) return null;
   const localPart = `${BILLING_EMAIL_PREFIX}${cnpj.slice(0, 8)}${cnpj.slice(-2)}`.toLowerCase();
   const email = `${localPart}@${BILLING_EMAIL_DOMAIN}`;
   return /^\S+@\S+\.\S+$/.test(email) ? email : null;
+}
+
+function billingPhoneFromCnpj(value) {
+  const cnpj = onlyDigits(value);
+  if (!isValidCnpj(cnpj)) return null;
+  const phone = `${BILLING_PHONE_AREA_CODE}${BILLING_PHONE_MOBILE_PREFIX}${cnpj.slice(0, 8)}`;
+  return /^\d{11}$/.test(phone) ? phone : null;
 }
 
 function parseBrazilianPhone(value) {
@@ -279,7 +302,7 @@ function buildCompanyCustomer(profile, address) {
   const document = onlyDigits(profile?.document);
   const name = normalizeText(profile?.name, 64);
   const email = billingEmailFromCnpj(document);
-  const phone = parseBrazilianPhone(profile?.phone || BILLING_PHONE);
+  const phone = parseBrazilianPhone(billingPhoneFromCnpj(document));
   const normalizedAddress = normalizeStructuredAddress(address);
   if (!name || !isValidCnpj(document) || !email || !phone || validateAddress(normalizedAddress).length) {
     const error = new Error('A configuração do cliente empresarial está incompleta ou inválida.');
@@ -461,7 +484,7 @@ app.get('/api/health', (_req, res) => {
     defaultCustomerConfigured: Boolean(
       isValidCnpj(DEFAULT_BILLING_CUSTOMER.document)
       && billingEmailFromCnpj(DEFAULT_BILLING_CUSTOMER.document)
-      && parseBrazilianPhone(DEFAULT_BILLING_CUSTOMER.phone)
+      && parseBrazilianPhone(billingPhoneFromCnpj(DEFAULT_BILLING_CUSTOMER.document))
       && validateAddress(DEFAULT_BILLING_CUSTOMER.address).length === 0
     ),
     timestamp: new Date().toISOString()
@@ -679,12 +702,14 @@ module.exports = {
   server,
   helpers: {
     billingEmailFromCnpj,
+    billingPhoneFromCnpj,
     buildCompanyCustomer,
     extractBoletoFromOrder,
     fallbackIdempotencyKey,
     generateDueAt,
     isValidCnpj,
     normalizeItems,
+    parseBillingCompanyList,
     resolveBillingAddress,
     parseBrazilianPhone,
     parseShippingAddress
