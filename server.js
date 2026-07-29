@@ -26,9 +26,35 @@ const PAGARME_BOLETO_DUE_DAYS = normalizeInteger(process.env.PAGARME_BOLETO_DUE_
 const PAGARME_BOLETO_INSTRUCTIONS = String(
   process.env.PAGARME_BOLETO_INSTRUCTIONS || 'Pagar até o vencimento.'
 ).trim().slice(0, 255);
-const DEFAULT_CUSTOMER_EMAIL = String(process.env.PAGARME_CUSTOMER_EMAIL || '').trim();
-const DEFAULT_CUSTOMER_PHONE = onlyDigits(process.env.PAGARME_CUSTOMER_PHONE || '');
-const DEFAULT_CUSTOMER_DOCUMENT = onlyDigits(process.env.PAGARME_CUSTOMER_DOCUMENT || '');
+// Perfis autorizados pelo responsável da integração. Edite esta lista para incluir ou remover CNPJs.
+const BILLING_COMPANY_PROFILES = Object.freeze([
+  Object.freeze({
+    name: '57.427.698 LUCAS ALVES SOUZA',
+    document: '57427698000143'
+  }),
+  Object.freeze({
+    name: '65.909.981 ADRIANO PEREIRA DOS SANTOS',
+    document: '65909981000130'
+  })
+]);
+
+// Contatos próprios usados em todas as emissões; dados de contato da URL não são enviados à Pagar.me.
+const BILLING_EMAIL = 'enovo6120@gmail.com';
+const BILLING_PHONE = '11982789188';
+
+// Fallback usado somente quando o endereço recebido pela URL estiver ausente ou inválido.
+const DEFAULT_BILLING_ADDRESS = Object.freeze({
+  line_1: '991, Estrada do Bodao, Miracatu',
+  line_2: '',
+  zip_code: '11850000',
+  city: 'Miracatu',
+  state: 'SP',
+  country: 'BR'
+});
+
+let billingRotationIndex = 0;
+let billingRotationQueue = Promise.resolve();
+const billingProfileByIdempotencyKey = new Map();
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -53,20 +79,21 @@ function normalizeText(value, maxLength = 255) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
 }
 
-function isValidCpf(value) {
-  const cpf = onlyDigits(value);
-  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+function isValidCnpj(value) {
+  const cnpj = onlyDigits(value);
+  if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
 
-  const calculateDigit = (base, factor) => {
-    let total = 0;
-    for (const digit of base) total += Number(digit) * factor--;
-    const remainder = (total * 10) % 11;
-    return remainder === 10 ? 0 : remainder;
+  const calculateDigit = (base, factors) => {
+    const total = base.split('').reduce((sum, digit, index) => {
+      return sum + Number(digit) * factors[index];
+    }, 0);
+    const remainder = total % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
   };
 
-  const first = calculateDigit(cpf.slice(0, 9), 10);
-  const second = calculateDigit(cpf.slice(0, 10), 11);
-  return first === Number(cpf[9]) && second === Number(cpf[10]);
+  const first = calculateDigit(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const second = calculateDigit(cnpj.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return first === Number(cnpj[12]) && second === Number(cnpj[13]);
 }
 
 function parseBrazilianPhone(value) {
@@ -137,11 +164,54 @@ function normalizeStructuredAddress(address = {}) {
 
 function validateAddress(address) {
   const errors = [];
-  if (!address.line_1) errors.push('endereço completo');
+  if (!address.line_1 || address.line_1.length < 5) errors.push('endereço completo');
   if (address.zip_code.length !== 8) errors.push('CEP com 8 dígitos');
-  if (!address.city) errors.push('cidade');
+  if (!address.city || address.city.length < 2) errors.push('cidade');
   if (!/^[A-Z]{2}$/.test(address.state)) errors.push('UF com 2 letras');
+  if (address.country !== 'BR') errors.push('país BR');
   return errors;
+}
+
+function resolveBillingAddress(body = {}) {
+  const customerInput = body.customer || {};
+  const candidate = customerInput.address?.line_1 || customerInput.address?.line1
+    ? normalizeStructuredAddress(customerInput.address)
+    : parseShippingAddress(body.shipping?.address, body.shipping?.cep);
+  const errors = validateAddress(candidate);
+  if (errors.length) {
+    return {
+      address: { ...DEFAULT_BILLING_ADDRESS },
+      source: 'default',
+      rejectedFields: errors
+    };
+  }
+  return { address: candidate, source: 'url', rejectedFields: [] };
+}
+
+function withNextBillingCompany(idempotencyKey, callback) {
+  const task = billingRotationQueue.then(async () => {
+    const assignedIndex = billingProfileByIdempotencyKey.get(idempotencyKey);
+    const isRetry = Number.isInteger(assignedIndex);
+    const profileIndex = isRetry ? assignedIndex : billingRotationIndex;
+    const profile = BILLING_COMPANY_PROFILES[profileIndex];
+    if (!profile || !isValidCnpj(profile.document) || normalizeText(profile.name, 64).length < 2) {
+      const error = new Error(`Perfil empresarial inválido na posição ${profileIndex + 1}.`);
+      error.code = 'BILLING_PROFILE_INVALID';
+      throw error;
+    }
+    const result = await callback(profile, profileIndex, isRetry);
+    if (!isRetry) {
+      billingProfileByIdempotencyKey.set(idempotencyKey, profileIndex);
+      if (billingProfileByIdempotencyKey.size > 5000) {
+        const oldestKey = billingProfileByIdempotencyKey.keys().next().value;
+        billingProfileByIdempotencyKey.delete(oldestKey);
+      }
+      billingRotationIndex = (profileIndex + 1) % BILLING_COMPANY_PROFILES.length;
+    }
+    return result;
+  });
+  billingRotationQueue = task.catch(() => undefined);
+  return task;
 }
 
 function normalizeItems(rawItems, fallbackAmountInCents) {
@@ -252,6 +322,9 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     service: 'checkout-pagarme-boleto',
     pagarmeConfigured: Boolean(PAGARME_SECRET_KEY),
+    billingProfiles: BILLING_COMPANY_PROFILES.length,
+    billingRotation: 'sequential-memory',
+    defaultAddressConfigured: validateAddress(DEFAULT_BILLING_ADDRESS).length === 0,
     timestamp: new Date().toISOString()
   });
 });
@@ -281,83 +354,84 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
     }];
   }
 
-  const customerInput = body.customer || {};
-  const customerName = normalizeText(customerInput.name || body.customerName, 64);
-  const customerEmail = normalizeText(customerInput.email || DEFAULT_CUSTOMER_EMAIL, 64);
-  const customerDocument = onlyDigits(customerInput.document || body.document || DEFAULT_CUSTOMER_DOCUMENT);
-  const customerPhone = parseBrazilianPhone(customerInput.phone || body.phone || DEFAULT_CUSTOMER_PHONE);
-
-  if (customerName.length < 2) {
-    return res.status(400).json({ error: 'Informe o nome completo do cliente para emitir o boleto.' });
+  const customerEmail = normalizeText(BILLING_EMAIL, 64);
+  const customerPhone = parseBrazilianPhone(BILLING_PHONE);
+  if (!/^\S+@\S+\.\S+$/.test(customerEmail) || !customerPhone) {
+    return res.status(500).json({ error: 'Revise BILLING_EMAIL e BILLING_PHONE no servidor.' });
   }
-  if (!/^\S+@\S+\.\S+$/.test(customerEmail)) {
-    return res.status(400).json({ error: 'Informe um e-mail válido do cliente para emitir o boleto.' });
-  }
-  if (!isValidCpf(customerDocument)) {
-    return res.status(400).json({ error: 'Informe um CPF válido do cliente para emitir o boleto.' });
-  }
-  if (!customerPhone) {
-    return res.status(400).json({ error: 'Informe um telefone brasileiro válido, com DDD.' });
+  if (validateAddress(DEFAULT_BILLING_ADDRESS).length) {
+    return res.status(500).json({ error: 'O endereço empresarial padrão configurado no servidor é inválido.' });
   }
 
-  const structuredAddress = customerInput.address?.line_1 || customerInput.address?.line1
-    ? normalizeStructuredAddress(customerInput.address)
-    : parseShippingAddress(body.shipping?.address, body.shipping?.cep);
-  const addressErrors = validateAddress(structuredAddress);
-  if (addressErrors.length) {
-    return res.status(400).json({ error: `Revise o endereço do cliente: ${addressErrors.join(', ')}.` });
-  }
-
+  const addressResolution = resolveBillingAddress(body);
   const idempotencyKey = normalizeIdempotencyKey(req.get('Idempotency-Key') || body.idempotencyKey);
   if (!idempotencyKey) {
     return res.status(400).json({ error: 'A chave de idempotência enviada é inválida.' });
   }
 
-  const customerAddress = { ...structuredAddress };
-  if (!customerAddress.line_2) delete customerAddress.line_2;
-
-  const payload = {
-    code: orderCodeFromIdempotencyKey(idempotencyKey),
-    items,
-    customer: {
-      name: customerName,
-      email: customerEmail,
-      document: customerDocument,
-      document_type: 'CPF',
-      type: 'individual',
-      address: customerAddress,
-      phones: { mobile_phone: customerPhone }
-    },
-    payments: [
-      {
-        payment_method: 'boleto',
-        boleto: {
-          instructions: PAGARME_BOLETO_INSTRUCTIONS,
-          due_at: generateDueAt(),
-          type: 'DM'
-        }
-      }
-    ],
-    metadata: { source: 'diskgas-chat-checkout' }
-  };
-
   try {
-    const pagarmeResponse = await axios.post(`${PAGARME_API_URL}/orders`, payload, {
-      auth: { username: PAGARME_SECRET_KEY, password: '' },
-      headers: {
-        'Content-Type': 'application/json',
-        'Idempotency-Key': idempotencyKey
-      },
-      timeout: 20000,
-      validateStatus: status => status >= 200 && status < 300
-    });
+    return await withNextBillingCompany(idempotencyKey, async (billingCompany, profileIndex, isRetry) => {
+      const customerAddress = { ...addressResolution.address };
+      if (!customerAddress.line_2) delete customerAddress.line_2;
 
-    const boleto = extractBoletoFromOrder(pagarmeResponse.data, amountInCents);
-    if (!boleto) {
-      return res.status(502).json({ error: 'A Pagar.me criou o pedido, mas não devolveu a linha digitável do boleto.' });
-    }
-    return res.status(201).json(boleto);
+      const payload = {
+        code: orderCodeFromIdempotencyKey(idempotencyKey),
+        items,
+        customer: {
+          name: normalizeText(billingCompany.name, 64),
+          email: customerEmail,
+          document: onlyDigits(billingCompany.document),
+          document_type: 'CNPJ',
+          type: 'company',
+          address: customerAddress,
+          phones: { mobile_phone: customerPhone }
+        },
+        payments: [
+          {
+            payment_method: 'boleto',
+            boleto: {
+              instructions: PAGARME_BOLETO_INSTRUCTIONS,
+              due_at: generateDueAt(),
+              type: 'DM'
+            }
+          }
+        ],
+        metadata: {
+          source: 'diskgas-chat-checkout',
+          billing_profile_index: String(profileIndex + 1),
+          billing_address_source: addressResolution.source,
+          billing_idempotency_retry: String(isRetry)
+        }
+      };
+
+      const pagarmeResponse = await axios.post(`${PAGARME_API_URL}/orders`, payload, {
+        auth: { username: PAGARME_SECRET_KEY, password: '' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey
+        },
+        timeout: 20000,
+        validateStatus: status => status >= 200 && status < 300
+      });
+
+      const boleto = extractBoletoFromOrder(pagarmeResponse.data, amountInCents);
+      if (!boleto) {
+        const error = new Error('A Pagar.me criou o pedido, mas não devolveu a linha digitável do boleto.');
+        error.code = 'BOLETO_RESPONSE_INVALID';
+        throw error;
+      }
+      return res.status(201).json({
+        ...boleto,
+        addressSource: addressResolution.source
+      });
+    });
   } catch (error) {
+    if (error?.code === 'BILLING_PROFILE_INVALID') {
+      return res.status(500).json({ error: error.message });
+    }
+    if (error?.code === 'BOLETO_RESPONSE_INVALID') {
+      return res.status(502).json({ error: error.message });
+    }
     const providerStatus = Number(error?.response?.status) || 502;
     const responseStatus = providerStatus >= 400 && providerStatus < 500 ? 422 : 502;
     console.error('Falha ao emitir boleto na Pagar.me:', {
@@ -485,8 +559,9 @@ module.exports = {
   helpers: {
     extractBoletoFromOrder,
     generateDueAt,
-    isValidCpf,
+    isValidCnpj,
     normalizeItems,
+    resolveBillingAddress,
     parseBrazilianPhone,
     parseShippingAddress
   }
