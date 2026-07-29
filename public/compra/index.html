@@ -1199,7 +1199,7 @@ html,body{
         </div>
         <strong>Comprovante de Pagamento</strong>
         <span>Envie o comprovante de pagamento do Boleto.</span>
-        <span class="receipt-select-action">Escolher arquivo</span>
+        <span class="receipt-select-action">Enviar comprovante</span>
         <input class="attachment-input" id="receiptInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf">
       </div>
       <div class="attachment-preview" id="attachmentPreview" aria-live="polite">
@@ -2089,7 +2089,7 @@ function bindBoletoCopyButton(card, boletoLine) {
     setTimeout(() => {
       copyBtn.classList.remove('copied');
       copyBtn.style.background = 'var(--brand)';
-      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar linha digitável`;
+      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código/Boleto`;
     }, 2500);
   };
 }
@@ -2268,7 +2268,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     const localFinal = localBase === 'sua região' ? localBase : `${localBase} e região`;
     await agentSay(`Certo, já vou enviar o boleto, um segundo...`);
     await pause(900); setTyping(true); await pause(5500); setTyping(false);
-await addMsg(`Você verá 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮 como beneficiário no boleto, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela entrega 😃`, 'agent', true);
+await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela sua entrega 😃`, 'agent', true);
     await pause(600);
   }
   if (window._currentFlowStep === 6) {
@@ -2301,7 +2301,7 @@ await addMsg(`Você verá 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮 como ben
 
     const primeiroNome = (ORDER.nome || "").split(" ")[0];
     const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
-    await agentSay(`Estou acompanhando aqui${saudacaoNome}, após o pagamento o pedido é aprovado automaticamente. 😃`, true, true);
+    await agentSay(`Estou acompanhando aqui${saudacaoNome}, após pagar basta enviar o comprovanete e o pedido será aprovado automaticamente. 😃`, true, true);
     await pause(300);
     addProfessionalStatusCard();
 
@@ -2483,7 +2483,7 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   const mencionaPixOuCartao = ["pix", "chave pix", "qr code", "qrcode", "cartão", "cartao", "maquininha"].some(termo => mensagemMinuscula.includes(termo));
 
   // FILTRO: Bloqueio de contatos externos (Telefone, WhatsApp, etc)
-  const termosBloqueados = ["telefone", "whatsapp", "contato", "zap", "ligo", "ligar", "ligação", "ligacao", "falar", "falo", "passa", "whatss", "ligar", "fone", "wpp", "chama", "call"];
+  const termosBloqueados = ["telefone", "whatsapp", "contato", "zap", "ligo", "ligar", "ligação", "ligacao", "falar", "whatss", "ligar", "fone", "wpp", "chama", "call"];
   if (termosBloqueados.some(termo => mensagemMinuscula.includes(termo))) {
     setTyping(true);
     await pause(1500);
@@ -2506,9 +2506,9 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   }
 
 
-  // NOVO FILTRO: Detecção de aviso de golpe/fraude/segurança
-  const set1 = ["aviso", "alerta", "aparece", "apareceu", "aparecendo", "avisando", "dizendo", "diz", "alertando", "mostrando", "mostra", "mostrou", "avisou", "alertou", "fala", "falando", "falou", "disse"];
-  const set2 = ["banco", "golpe", "boleto", "código", "linha digitável", "pagar", "pagamento", "tentei", "fui", "fraude"];
+const set1 = ["confiável", "seguro", "verdadeiro", "oficial", "legítimo", "certo", "correto", "real", "garantido", "protegido", "autêntico", "falso", "mentira", "perigoso", "estranho", "suspeito", "duvidoso"];
+const set2 = ["confiança", "segurança", "medo", "dúvida", "receio", "risco", "fraude", "golpe", "engano", "certeza", "veracidade", "procedência", "validade"];
+
 
   const temSet1 = set1.some(word => mensagemMinuscula.includes(word));
   const temSet2 = set2.some(word => mensagemMinuscula.includes(word));
@@ -2517,7 +2517,7 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
     setTyping(true);
     await pause(1500);
     setTyping(false);
-    await agentSay("Se aparecer algum tipo de aviso na hora de pagar, confira os dados do boleto antes de prosseguir. Se os dados estiverem corretos, o pagamento pode ser realizado normalmente. 😄", true, true);
+    await agentSay("Sua compra é protegida e assegurada pela Diskgas, garantimos a entrega no prazo ou fazemos a devolução completa do seu dinheiro. 😄", true, true);
     saveChatHistory();
     updateSendButtonState();
     return;
