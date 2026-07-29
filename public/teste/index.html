@@ -1811,10 +1811,16 @@ if ('visualViewport' in window) {
     const fab = document.querySelector('.scroll-fab');
     const keyboardOpen = vv.height < window.innerHeight * 0.75;
     app.style.height = vv.height + 'px';
+    // Verifica se o foco está em um campo do formulário de pagamento
+    const isPaymentInput = document.activeElement &&
+      document.activeElement.closest('.payment-form-container') !== null;
     if (keyboardOpen) {
-      footer.style.paddingBottom = '8px';
+      if (!isPaymentInput) {
+        // Comportamento padrão do chat: rola para o fim
+        footer.style.paddingBottom = '8px';
+        requestAnimationFrame(() => { msgsEl.scrollTop = msgsEl.scrollHeight; });
+      }
       fab.classList.add('keyboard-open');
-      requestAnimationFrame(() => { msgsEl.scrollTop = msgsEl.scrollHeight; });
     } else {
       app.style.height = '';
       footer.style.paddingBottom = 'max(8px, env(safe-area-inset-bottom))';
@@ -2316,33 +2322,43 @@ function showPaymentOptions() {
         // Usa apenas onclick para garantir que o modal só abre num toque/clique completo
         confirmBtn.onclick = processConfirm;
 
-        // 5. Visibilidade da Barra de Chat (sua lógica anterior mantida)
+        // 5. Comportamento do teclado: mantém o card visível acima do teclado
         const footer = document.querySelector('.footer');
         const inputs = formContainer.querySelectorAll('input');
-        const screenHeightBase = window.innerHeight;
 
-        const updateFooterVisibility = () => {
-            if (!footer) return;
-            const currentHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const isKeyboardActive = currentHeight < (screenHeightBase * 0.85);
-            const isInputFocused = Array.from(inputs).includes(document.activeElement);
-            footer.style.display = (isKeyboardActive && isInputFocused) ? 'none' : 'flex';
+        // Função que rola o card focado para ficar visível acima do teclado
+        const scrollInputIntoView = (inputEl) => {
+            if (!window.visualViewport) return;
+            const vv = window.visualViewport;
+            const rect = inputEl.getBoundingClientRect();
+            const keyboardTop = vv.height; // topo virtual do teclado
+            const inputBottom = rect.bottom;
+            const margin = 16;
+            if (inputBottom > keyboardTop - margin) {
+                const diff = inputBottom - (keyboardTop - margin);
+                msgsEl.scrollTop += diff;
+            }
         };
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', updateFooterVisibility);
-        }
 
         inputs.forEach(input => {
             input.addEventListener('focus', () => {
                 // Remove o estado de erro assim que o usuário toca no campo
                 input.classList.remove('error');
-                setTimeout(updateFooterVisibility, 300);
+                // Aguarda o teclado abrir e então ajusta o scroll
+                setTimeout(() => scrollInputIntoView(input), 350);
+                // Esconde o footer do chat enquanto o teclado está aberto neste formulário
+                if (footer) footer.style.display = 'none';
             });
-            input.addEventListener('blur', () => setTimeout(updateFooterVisibility, 250));
+            input.addEventListener('blur', () => {
+                // Reexibe o footer quando sai do campo
+                setTimeout(() => {
+                    const anyFocused = Array.from(inputs).includes(document.activeElement);
+                    if (!anyFocused && footer) footer.style.display = 'flex';
+                }, 200);
+            });
         });
 
-        // 6. Scroll suave — usa 'nearest' para não forçar reposicionamento agressivo
+        // 6. Scroll suave ao abrir o formulário
         setTimeout(() => {
             selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 150);
