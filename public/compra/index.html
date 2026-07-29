@@ -2340,7 +2340,7 @@ async function getChatGPTResponse(userMessage, chatHistory, currentFlowStep) {
     // Variáveis para controlar se a primeira mensagem de fricção já foi enviada
   const chatHistoryLower = chatHistory.toLowerCase();
 
-  const hasSentEntregaMsg1 = chatHistoryLower.includes("garantimos a sua entrega no prazo, caso contrário faremos o reembolso completo do valor pago.");
+  const hasSentEntregaMsg1 = chatHistoryLower.includes("garantimos a entrega no prazo, caso contrário faremos o reembolso completo do valor pago.");
   const hasSentBoletoMsg1 = chatHistoryLower.includes("o pagamento via boleto é 100% seguro e protegido.");
   const hasSentQualidadeMsg1 = chatHistoryLower.includes("trabalhamos apenas com produtos de alta qualidade e fornecedores confiáveis.");
   const hasSentConfiancaMsg1 = chatHistoryLower.includes("a diskgas tem anos de experiência no mercado e milhares de clientes satisfeitos.");
@@ -2349,7 +2349,7 @@ async function getChatGPTResponse(userMessage, chatHistory, currentFlowStep) {
   const msgEntrega1 = "Fique tranquilo, sua compra é protegida e assegurada pela Diskgás, garantimos a entrega no prazo ou fazemos a devolução do seu dinheiro. 😄";
   const msgBoleto1 = "O pagamento via boleto é 100% seguro e protegido. A entrega é garantida e a aprovação é automática, e em caso de qualquer problema fazemos o reembolso completo do valor pago. 😄";
   const msgQualidade1 = "Trabalhamos apenas com produtos certificados. Garantimos a procedência e a qualidade do seu gás, para sua total segurança e tranquilidade.";
-  const msgConfianca1 = "A sua compra é assegurada pela Diskgas, garantimos a sua entrega no prazo, caso contrário faremos o reembolso completo do valor pago. 😄";
+  const msgConfianca1 = "A sua compra é assegurada pela Diskgas, garantimos a entrega no prazo, caso contrário faremos o reembolso completo do valor pago. 😄";
 
   // Mensagens de conversão - Nível 2 (novas, mais detalhadas)
   const msgEntrega2 = "Entendo sua preocupação. Além da nossa garantia de reembolso, saiba que contamos com uma logística otimizada e entregadores treinados para assegurar que seu pedido chegue rápido e em perfeitas condições. Sua tranquilidade é nossa prioridade! 😄";
@@ -2373,7 +2373,7 @@ Você é o Mateus, atendente da Diskgas.
 
 [ASSUNTO: BOLETO / CÓDIGO DO BOLETO]
 - REGRA_BOLETO: Se o cliente perguntar se aceita boleto, como pagar, onde está o boleto ou pedir o código do boleto:
-   - Responda exatamente e apenas: O pagamento deste pedido é realizado via boleto. Basta copiar o código do boleto enviado no chat e pagar pelo aplicativo do seu banco. 😄
+   - Responda exatamente e apenas: Após o pagamento basta enviar o comprovante e o pedido será aprovado imediatamente, voce pode enviar o comprovante clicando no icone de presilha ao lado de onde escreve as mensagems 😄
 
 [ASSUNTO: CARTÃO / MAQUININHA / PIX / CHAVE PIX / QR CODE]
 - REGRA_PRECO_CARTAO: Se o cliente perguntar sobre cartão, maquininha, Pix, chave Pix ou QR Code:
