@@ -1,12 +1,14 @@
 {
-  "name": "pagarme-boleto-chat-server",
+  "name": "diskgas-pagarme-boleto-chat-server",
   "version": "1.0.0",
-  "description": "Servidor unificado para checkout Boleto Pagar.me e chat em tempo real",
+  "description": "Servidor unificado para checkout com boleto Pagar.me e chat em tempo real",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js",
-    "validate": "node validate_package.js"
+    "validate": "node validate_package.js",
+    "test:boleto": "node test_boleto_integration.js",
+    "test": "npm run check && npm run validate && npm run test:boleto"
   },
   "keywords": [
     "boleto",
