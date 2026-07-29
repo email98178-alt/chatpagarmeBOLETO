@@ -1962,9 +1962,6 @@ const confirmationMessages = [
 ];
 
 function showOrderConfirmation() {
-  // Criamos esta variável global (window) para saber que o bloco já apareceu
-  window._orderConfirmationShown = true; 
-  
   if (!currentConfirmationBlock) {
     currentConfirmationBlock = document.createElement('div');
     currentConfirmationBlock.className = 'steps-card order-confirmation-block';
@@ -2027,6 +2024,7 @@ function showOrderConfirmation() {
   `;
 
   scrollDown();
+  window._orderConfirmationShown = true;
 
   currentConfirmationBlock.querySelector('#btnCorrect').onclick = async () => {
     currentConfirmationBlock.style.opacity='0.8';
@@ -2470,12 +2468,11 @@ async function doSend() {
   
   if (currentBubble) currentBubble.dataset.originalText = originalText;
 
-  // VERIFICAÇÃO: Só responde se o resumo do pedido já tiver aparecido
-    // VERIFICAÇÃO: Só responde se o resumo do pedido já tiver aparecido
-// Se o fluxo já passou do passo 3, ou se a variável for verdadeira, permitimos a resposta
-if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
+  // O agente só responde após o primeiro resumo e a mensagens com 3 palavras ou mais.
+  const wordCount = (originalText.match(/\S+/g) || []).length;
+  if (!window._orderConfirmationShown || wordCount < 3) {
     updateSendButtonState();
-    return; 
+    return;
   }
 
 
