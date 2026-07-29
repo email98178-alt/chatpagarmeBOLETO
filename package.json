@@ -1,7 +1,7 @@
 {
   "name": "diskgas-pagarme-boleto-chat-server",
-  "version": "1.1.0",
-  "description": "Servidor unificado para checkout com boleto Pagar.me, rotação CNPJ e chat em tempo real",
+  "version": "1.2.0",
+  "description": "Checkout com boleto Pagar.me, e-mail por CNPJ, fallback empresarial e chat em tempo real",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
