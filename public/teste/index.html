@@ -1473,6 +1473,10 @@ const deliveryWarningBodyEl    = document.getElementById('deliveryWarningBody');
 function openDeliveryWarning() {
   const diaSemana = new Date().getDay(); // 0=Dom, 6=Sab
   const isFimDeSemana = (diaSemana === 0 || diaSemana === 6);
+  const deliveryWarningTitleEl = document.getElementById('deliveryWarningTitle');
+  deliveryWarningTitleEl.textContent = isFimDeSemana
+    ? 'Disponível apenas de Segunda a Sexta'
+    : 'Disponível apenas aos Sábados e Domingos';
   deliveryWarningBodyEl.textContent = isFimDeSemana
     ? 'Pagamentos na entrega estão disponíveis apenas de segunda a sexta-feira. Nos finais de semana, aceitamos somente Pix para garantir a agilidade nas entregas.'
     : 'Pagamentos na entrega estão disponíveis apenas aos sábados e domingos. Durante a semana, aceitamos somente Pix para garantir a agilidade nas entregas.';
