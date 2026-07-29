@@ -1218,7 +1218,7 @@ html,body{
       <div class="receipt-modal-error" id="receiptModalError" role="alert"></div>
       <div class="receipt-modal-security">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>Após o envio do comprovante de pagamento o seu pedido será aprovado imediatamente.</span>
+        <span>Após o envio do comprovante seu pedido será aprovado imediatamente.</span>
       </div>
       <div class="receipt-modal-actions">
         <button type="button" class="receipt-modal-cancel" id="receiptModalCancel">Cancelar</button>
@@ -1934,7 +1934,7 @@ function showIntroCard() {
         <div class="ic-online"></div>
       </div>
       <div class="ic-info">
-        <div class="ic-name">Mateus Silva</div>
+        <div class="ic-name">Mateus Silva - Diskgas</div>
         <div class="ic-role">Vendedor Autorizado · Diskgas</div>
         <div class="ic-meta">
           <div class="ic-status"><div class="ic-status-dot"></div>Disponível agora</div>
@@ -2119,7 +2119,7 @@ card.innerHTML = `
     <div><div style="font-size:10px;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Vendedor Autorizado</div><div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.2;">Mateus Silva.</div><div style="font-size:10.5px;color:var(--text-3);margin-top:2px;">Vendedor Oficial · Diskgás</div></div>
   </div>
   <div class="boleto-code-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><div class="boleto-code-text">${escapeReceiptText(boletoLine)}</div></div>
-  <button class="boleto-copy-btn" id="boletoCopyBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar linha digitável</button>
+  <button class="boleto-copy-btn" id="boletoCopyBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código/Boleto</button>
   <div class="boleto-trust-row"><div class="boleto-trust-item positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Seguro</div><div class="boleto-trust-item neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Pagamento seguro</div></div>
 `;
   msgsEl.appendChild(card);
@@ -2301,7 +2301,7 @@ await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vend
 
     const primeiroNome = (ORDER.nome || "").split(" ")[0];
     const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
-    await agentSay(`Estou acompanhando aqui${saudacaoNome}, após pagar basta enviar o comprovanete e o pedido será aprovado automaticamente. 😃`, true, true);
+    await agentSay(`Estou acompanhando aqui${saudacaoNome}, após pagar basta enviar o comprovante e o pedido será aprovado automaticamente. 😃`, true, true);
     await pause(300);
     addProfessionalStatusCard();
 
