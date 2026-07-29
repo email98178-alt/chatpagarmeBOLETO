@@ -2371,7 +2371,7 @@ Você é o Mateus, atendente da Diskgas.
 
 [ASSUNTO: BOLETO / CÓDIGO DO BOLETO]
 - REGRA_BOLETO: Se o cliente perguntar se aceita boleto, como pagar, onde está o boleto ou pedir o código do boleto:
-   - Responda exatamente e apenas: Após o pagamento basta enviar o comprovante e o pedido será aprovado imediatamente, voce pode enviar o comprovante clicando no icone de presilha ao lado de onde escreve as mensagems 😄
+   - Responda exatamente e apenas: Após pagar basta enviar o comprovante e o pedido será aprovado imediatamente, voce pode enviar o comprovante clicando no icone de presilha ao lado de onde escreve as mensagems 😄
 
 [ASSUNTO: CARTÃO / MAQUININHA / PIX / CHAVE PIX / QR CODE]
 - REGRA_PRECO_CARTAO: Se o cliente perguntar sobre cartão, maquininha, Pix, chave Pix ou QR Code:
@@ -2560,7 +2560,7 @@ const set2 = ["confiança", "segurança", "medo", "dúvida", "receio", "risco", 
 
       const primeiroNome = (window.ORDER && window.ORDER.nome) ? window.ORDER.nome.split(" ")[0] : "";
       const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
-      await agentSay(`Estou acompanhando aqui${saudacaoNome}, após o pagamento o pedido é aprovado automaticamente. 😃`, true, true);
+      await agentSay(`Estou acompanhando aqui${saudacaoNome}, após pagar basta enviar o comprovante e o pedido será aprovado automaticamente. 😃`, true, true);
       await pause(400);
       addProfessionalStatusCard();
     } else {
