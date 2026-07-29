@@ -2077,6 +2077,11 @@ function showPaymentOptions() {
   const pricePix = ORDER.productPrice;
   const priceDelivery = ORDER.productPrice * 1.30; // Acréscimo de 30%
   const fmt = (v) => v.toFixed(2).replace('.', ',');
+  const _diaSemana = new Date().getDay();
+  const _fimDeSemana = (_diaSemana === 0 || _diaSemana === 6);
+  const deliveryAvailability = _fimDeSemana
+    ? 'Disponível apenas de Segunda a Sexta'
+    : 'Disponível apenas aos Sábados e Domingos';
 
   const card = document.createElement('div');
   card.className = 'steps-card payment-selection-block'; 
@@ -2122,7 +2127,7 @@ function showPaymentOptions() {
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--text);">Na Entrega</div>
-            <div style="font-size:11px;color:var(--text-3);font-weight:500;margin-top:1px;">Cartão ou dinheiro</div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:500;margin-top:1px;">${deliveryAvailability}</div>
           </div>
           <div class="payment-price-tag">
             <div class="payment-price-main" style="color:var(--text-2);">R$ ${fmt(priceDelivery)}</div>
