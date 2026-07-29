@@ -1190,17 +1190,16 @@ html,body{
         </div>
         <div>
           <h2 class="receipt-modal-title" id="receiptModalTitle">Enviar comprovante</h2>
-          <p class="receipt-modal-subtitle">Anexe o comprovante do pagamento para conferência do seu pedido.</p>
+          <p class="receipt-modal-subtitle">Anexe o comprovante do pagamento para aprovação do seu pedido.</p>
         </div>
       </div>
       <div class="receipt-drop-zone" id="receiptDropZone" role="button" tabindex="0" aria-label="Selecionar arquivo do comprovante">
         <div class="receipt-drop-zone-icon">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </div>
-        <strong>Selecione seu comprovante</strong>
-        <span>Escolha uma imagem ou documento salvo no seu dispositivo.</span>
+        <strong>Comprovante de Pagamento</strong>
+        <span>Envie o comprovante de pagamento do Boleto.</span>
         <span class="receipt-select-action">Escolher arquivo</span>
-        <span>PNG, JPG, WEBP ou PDF · até 5 MB</span>
         <input class="attachment-input" id="receiptInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf">
       </div>
       <div class="attachment-preview" id="attachmentPreview" aria-live="polite">
@@ -1219,7 +1218,7 @@ html,body{
       <div class="receipt-modal-error" id="receiptModalError" role="alert"></div>
       <div class="receipt-modal-security">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>O comprovante será vinculado somente a este atendimento e usado para a conferência do pagamento.</span>
+        <span>Após o envio do comprovante de pagamento o seu pedido será aprovado imediatamente.</span>
       </div>
       <div class="receipt-modal-actions">
         <button type="button" class="receipt-modal-cancel" id="receiptModalCancel">Cancelar</button>
@@ -2055,7 +2054,7 @@ function formatBoletoDueAt(value) {
   if (!value) return 'Vencimento informado no boleto';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Vencimento informado no boleto';
-  return `Vence em ${date.toLocaleDateString('pt-BR')}`;
+  return `Venc. ${date.toLocaleDateString('pt-BR')}`;
 }
 
 function safeBoletoUrl(value) {
@@ -2107,7 +2106,7 @@ card.innerHTML = `
   <div class="boleto-card-header">
     <div class="boleto-brand-mark">
       <div class="boleto-logo">BOLETO</div>
-      <div><div class="boleto-brand-label">Pagamento via Boleto</div><div class="boleto-brand-sub">Emitido pela Pagar.me</div></div>
+      <div><div class="boleto-brand-label">Boleto Rápido</div><div class="boleto-brand-sub">Diskgas Oficial</div></div>
     </div>
     <div class="boleto-expiry"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${escapeReceiptText(dueLabel)}</div>
   </div>
@@ -2121,7 +2120,7 @@ card.innerHTML = `
   </div>
   <div class="boleto-code-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><div class="boleto-code-text">${escapeReceiptText(boletoLine)}</div></div>
   <button class="boleto-copy-btn" id="boletoCopyBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar linha digitável</button>
-  <div class="boleto-trust-row"><div class="boleto-trust-item positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Seguro</div><div class="boleto-trust-item neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Processado pela Pagar.me</div></div>
+  <div class="boleto-trust-row"><div class="boleto-trust-item positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Seguro</div><div class="boleto-trust-item neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Pagamento seguro</div></div>
 `;
   msgsEl.appendChild(card);
   bindBoletoCopyButton(card, boletoLine);
@@ -2604,7 +2603,7 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
 function addProfessionalStatusCard() {
   const card = document.createElement('div');
   card.className = 'payment-status-card';
-  card.innerHTML = `<div class="status-header"><span class="status-badge">Diskgas Oficial</span><span style="font-size: 11px; color: var(--text-3); font-weight: 600;">Pedido #2849</span></div><div class="status-steps"><div class="step-bar completed"></div><div class="step-bar completed"></div><div class="step-bar active"></div><div class="step-bar"></div></div><div class="status-info"><div class="status-icon-pulse"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div class="status-text-main">Aguardando pagamento do boleto...</div><div class="status-text-sub">O entregador será acionado imediatamente após o pagamento do boleto.</div></div></div><div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--border-2); display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size: 11px; color: #059669; font-weight: 700;">Garantia de Entrega Prioritária Ativa</span></div>`;
+  card.innerHTML = `<div class="status-header"><span class="status-badge">Diskgas Oficial</span><span style="font-size: 11px; color: var(--text-3); font-weight: 600;">Pedido #2849</span></div><div class="status-steps"><div class="step-bar completed"></div><div class="step-bar completed"></div><div class="step-bar active"></div><div class="step-bar"></div></div><div class="status-info"><div class="status-icon-pulse"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div class="status-text-main">Aguardando pagamento do boleto...</div><div class="status-text-sub">O entregador será acionado imediatamente após o envio do comprovante.</div></div></div><div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--border-2); display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size: 11px; color: #059669; font-weight: 700;">Garantia de Entrega Prioritária Ativa</span></div>`;
   msgsEl.appendChild(card); scrollDown(true); return card;
 }
 
