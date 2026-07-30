@@ -2870,73 +2870,60 @@ async function getChatGPTResponse(userMessage, chatHistory, currentFlowStep) {
     ? "Aceitamos pagamentos na entrega apenas de Segunda a Sexta, aos finais de semana o entregador só é liberado após o pagamento para garantir rapidez nas entregas 😃"
     : "Aceitamos pagamentos na entrega apenas aos Sábados e Domingos, durante a semana o entregador só é liberado após o pagamento para garantir rapidez nas entregas 😃";
 
-    // Variáveis para controlar se a primeira mensagem de fricção já foi enviada
+  // Variáveis de mensagem ainda usadas nas regras fixas do prompt
   const chatHistoryLower = chatHistory.toLowerCase();
 
-  const hasSentEntregaMsg1 = chatHistoryLower.includes("garantimos a entrega do seu gás, caso contrário faremos o reembolso completo do valor pago.");
-  const hasSentPixMsg1 = chatHistoryLower.includes("o pagamento via pix na diskgas é 100% seguro e instantâneo.");
-  const hasSentQualidadeMsg1 = chatHistoryLower.includes("trabalhamos apenas com produtos de alta qualidade e fornecedores confiáveis.");
-  const hasSentConfiancaMsg1 = chatHistoryLower.includes("a diskgas tem anos de experiência no mercado e milhares de clientes satisfeitos.");
+  // Contexto dinâmico por etapa do fluxo
+  const _vPix   = ORDER.productPrice.toFixed(2).replace('.', ',');
+  const _vEntr  = (ORDER.productPrice * 1.30).toFixed(2).replace('.', ',');
+  const _vMeio  = (ORDER.productPrice * 0.50).toFixed(2).replace('.', ',');
+  const _nome   = (ORDER.nome || '').split(' ')[0] || 'cliente';
+  const _prod   = ORDER.productName || 'gás';
 
-  // Mensagens de conversão - Nível 1 (já existentes ou ligeiramente ajustadas)
-  const msgEntrega1 = "Fique tranquilo, sua compra é protegida e assegurada pela Diskgás, garantimos a entrega no prazo ou fazemos a devolução do seu dinheiro. 😄";
-  const msgPix1 = "O pagamento via Pix é 100% seguro e protegido. A entrega é garantida e a aprovação imediata, e em caso de qualquer problema fazemos o reembolso completo do valor pago. 😄";
-  const msgQualidade1 = "Trabalhamos apenas com produtos certificados. Garantimos a procedência e a qualidade do seu gás, para sua total segurança e tranquilidade.";
-  const msgConfianca1 = "Não se preocupe, sua compra é assegurada pela Diskgas, garantimos a entrega no prazo ou fazemos o reembolso completo do valor pago. 😄";
+  const _stepCtx = {
+    3: `O cliente está revisando o resumo do pedido (${_prod} para ${localidade}). Ele ainda NÃO confirmou. Responda dúvidas sobre o pedido, produto ou entrega. Não fale sobre pagamento ainda.`,
+    4: `O cliente acabou de receber a pergunta: "Você prefere pagar R$ ${_vPix} agora via Pix (30% de desconto) ou R$ ${_vEntr} na entrega?"
+Ele ainda NÃO escolheu a forma de pagamento. Responda apenas dúvidas sobre essa escolha:
+- Diferença de valor: o Pix tem 30% de desconto por ser pagamento instantâneo; na entrega é o preço padrão.
+- Segurança do Pix: é 100% seguro, aprovado imediatamente.
+- Prazo: 20-30 minutos após o pagamento.
+NÃO mencione cartão, maquininha nem repita a pergunta de escolha (o sistema fará isso).`,
+    5: `O cliente já escolheu a forma de pagamento e preencheu os dados. O Pix está sendo gerado. Responda apenas dúvidas sobre o processo de pagamento ou prazo.`,
+    6: `O código Pix já foi enviado ao cliente. Ele deve copiar e pagar pelo app do banco. Prazo de entrega: ${prazoEntrega} após o pagamento.
+- Se disser que pagou: confirme que está acompanhando e que o pedido será aprovado automaticamente.
+- Se tiver problema com o Pix: oriente a copiar o código e pagar pelo app do banco.
+- NÃO invente informações sobre o pagamento.`,
+    9: `O pedido está confirmado e o Pix foi pago. Responda apenas dúvidas sobre prazo de entrega ou status do pedido.`
+  }[currentFlowStep] || `Atendimento geral da Diskgas em ${localidade}.`;
 
-  // Mensagens de conversão - Nível 2 (novas, mais detalhadas)
-  const msgEntrega2 = "Entendo sua preocupação. Além da nossa garantia de reembolso, saiba que contamos com uma logística otimizada e entregadores treinados para assegurar que seu pedido chegue rápido e em perfeitas condições. Sua tranquilidade é nossa prioridade! 😄";
-  const msgPix2 = "Nosso sistema Pix é integrado diretamente com o vendedor autorizado na sua região, garantindo que cada transação seja rastreável e segura. Milhares de clientes já utilizam e aprovam a agilidade e segurança do nosso.";
-  const msgQualidade2 = "Sua segurança é prioridade, todos os nossos produtos passam por rigorosos controles de qualidade e são de marcas renomadas no mercado. Nosso compromisso é entregar o melhor para você e sua família, com a certeza de um produto seguro e eficiente. ✨";
-  const msgConfianca2 = "É natural ter dúvidas na primeira vez. A Diskgas construiu sua reputação ao longo dos anos com base na transparência, excelência no atendimento e na satisfação dos clientes. Convidamos você a experimentar e comprovar a qualidade e o compromisso que nos tornaram referência na região! 🤝";
+  const context = `Você é o Mateus, atendente oficial da Diskgas em ${localidade}.
+Seu objetivo é ajudar o cliente ${_nome} a finalizar o pedido de ${_prod} com o mínimo de atrito.
+Responda de forma breve, direta e amigável. Máximo 2 frases por resposta. Nunca invente informações.
 
-  const context = `
-Você é o Mateus, atendente da Diskgas. 
+=== ETAPA ATUAL ===
+${_stepCtx}
 
---- COMANDO CRÍTICO DE RESPOSTA ---
-1. Se a pergunta do cliente for sobre CARTÃO, MAQUININHA ou PAGAR NA ENTREGA/DINHEIRO, você deve responder UNICAMENTE o texto da regra correspondente abaixo.
-2. NUNCA junte o texto de pagamento com o prazo de entrega ou saudações extras se uma regra de pagamento for acionada.
-3. Responda EXATAMENTE o que está escrito, sem uma letra a mais.
+=== INFORMAÇÕES DO PEDIDO ===
+- Produto: ${_prod}
+- Localidade: ${localidade}
+- Preço Pix (com desconto): R$ ${_vPix}
+- Preço na entrega (sem desconto): R$ ${_vEntr}
+- Prazo de entrega: ${prazoEntrega} após o pagamento
+- Garantia: reembolso total em caso de não entrega
 
-[ASSUNTO: ENDEREÇO / LOCALIZAÇÃO / RETIRADA]
-1. Se você (Mateus) AINDA NÃO mencionou a localização:
-   - Responda EXATAMENTE: Estamos localizados em ${localidade}, atendemos todas as regiões próximas. 😄
-2. Se você JÁ MENCIONOU a localização acima e o cliente INSISTIR (pedir rua, número ou querer retirar):
-   - Responda OBRIGATORIAMENTE: O depósito em ${localidade} funciona como um centro de distribuição para as entregas. Por segurança, não realizamos atendimento presencial ou retiradas no local, operamos apenas com entregas para garantir o transporte seguro do gás. 😄
+=== REGRAS FIXAS (sempre válidas, independente da etapa) ===
+1. ENDEREÇO: Se perguntarem onde fica ou quiserem retirar: "Operamos apenas com entregas em ${localidade} e região. Não realizamos retiradas no local por segurança no transporte do gás. 😄"
+2. CARTÃO / MAQUININHA: ${msgCartao}
+3. PRAZO: "O prazo de entrega é de ${prazoEntrega} após a confirmação do pagamento. 😄"
+4. PAGAMENTO CONFIRMADO: Se o cliente disser que já pagou: "Perfeito! Estou acompanhando aqui, o pedido é aprovado automaticamente após a confirmação do Pix. 😃"
+5. GOLPE / AVISO DO BANCO: "Esse aviso é normal na primeira transação com essa chave. Pode pagar tranquilamente, sua compra é assegurada pela Diskgas. 😄"
+6. CONTATO EXTERNO (telefone, WhatsApp, ligo): "Por segurança dos nossos clientes, atendemos apenas por este canal. 😄"
+7. GARANTIA / CONFIANÇA: "Sua compra é 100% assegurada pela Diskgas. Garantimos a entrega no prazo ou fazemos o reembolso completo. 😄"
+8. NUNCA confirme que o pagamento foi recebido ou que o pedido foi finalizado antes do sistema fazer isso.
+9. NUNCA invente preços, prazos ou informações que não estejam acima.
 
-[ASSUNTO: CARTÃO / MAQUININHA]
-- REGRA_PRECO_CARTAO: Se o cliente perguntar sobre cartão ou maquininha:
-   - Responda exatamente e apenas: ${msgCartao}
-
-[ASSUNTO: PAGAR NA ENTREGA / DINHEIRO]
-- REGRA_PRECO_ENTREGA: Se o cliente perguntar sobre pagar na entrega ou dinheiro:
-   - Responda exatamente e apenas: ${msgEntrega}
-
---- MENSAGENS DE CONVERSÃO (PRIORIDADE ALTA) ---
-
-[RECEIO: ENTREGA / ATRASO / REEMBOLSO]
-- PALAVRAS-CHAVE: "atraso", "demora", "não chega", "garantia entrega", "reembolso", "receber", "entrega", "chega", "golpe", "fraude", "medo", "receio", "confio", "confiança", "seguro", "confiável", "verdadeiro", "verdade", "sei"
-- Responda: ${hasSentEntregaMsg1 ? msgEntrega2 : msgEntrega1}
-
-[RECEIO: SEGURANÇA DO PAGAMENTO PIX]
-- PALAVRAS-CHAVE: "segurança pix", "confiança pix", "problema pix", "pix seguro", "confiavel pix", "seguro pagar"
-- Responda: ${hasSentPixMsg1 ? msgPix2 : msgPix1}
-
-[RECEIO: QUALIDADE DO PRODUTO]
-- PALAVRAS-CHAVE: "qualidade", "produto", "gás", "vazamento", "procedência"
-- Responda: ${hasSentQualidadeMsg1 ? msgQualidade2 : msgQualidade1}
-
-[RECEIO: CONFIANÇA NA EMPRESA / PRIMEIRA COMPRA]
-- PALAVRAS-CHAVE: "primeira compra", "conheço", "reputação", "seguro comprar", "confiança", "confiável"
-- Responda: ${hasSentConfiancaMsg1 ? msgConfianca2 : msgConfianca1}
-
---- REGRAS DE OURO (USAR APENAS SE NÃO FOR CARTÃO/ENTREGA OU RECEIO) ---
-- PRAZO: Se o cliente perguntar o prazo de entrega isoladamente, responda: "O prazo de entrega é de ${prazoEntrega} após o pagamento. 😄"
-- PAGAMENTO: Nunca confirme que o Pix caiu, o pedido foi finalizado ou qualque tipo de confirmação. Se o cliente disser que pagou ou enviar algum comprovante responda: "Com o pagamento realizado podemos preparar o envio, o prazo de entrega é de ${prazoEntrega} após o pagamento. 😄"
-HISTÓRICO DE CONVERSA:
+=== HISTÓRICO DA CONVERSA ===
 ${chatHistory}
-
-PASSO ATUAL: ${currentFlowStep}
 `;
 
   try {
