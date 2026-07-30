@@ -2337,6 +2337,9 @@ function _bindPayFormBtn(wrapper, btnSel, nameSel, cpfSel, phoneSel, resolve) {
         if (footer) footer.style.display = 'flex';
         if (resolve) { resolve('confirmed'); resolve = null; }
         if (confirmationResolve) { confirmationResolve('confirmed'); confirmationResolve = null; }
+        // Limpa as flags de reenvio
+        window._awaitingPixForm = false;
+        window._awaitingDeliveryForm = false;
       }, 500);
 
     } else {
@@ -2727,10 +2730,13 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
       await pause(200);
 
       // Bloco de dados para Pix
+      window._awaitingPixForm = true;
+      window._pixFormPrice = _pricePix;
       const pixFormChoice = await new Promise(resolve => {
         confirmationResolve = resolve;
         showPixForm(_pricePix, resolve);
       });
+      window._awaitingPixForm = false;
 
       const spVal2 = addSpinner('Registrando dados...');
       await pause(1800);
@@ -2747,10 +2753,13 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
       await pause(200);
 
       // Bloco de dados + botão para pagar metade via Pix
+      window._awaitingDeliveryForm = true;
+      window._deliveryFormPrice = _priceEntrada;
       const deliveryFormChoice = await new Promise(resolve => {
         confirmationResolve = resolve;
         showDeliveryPixForm(_priceEntrada, resolve);
       });
+      window._awaitingDeliveryForm = false;
 
       ORDER.productPrice = _priceEntrada; // cobra apenas a metade via Pix
       window._isPartialPayment = true; // flag para o step 5 saber que é pagamento parcial
@@ -3140,7 +3149,20 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
     confirmationMsgIndex = (confirmationMsgIndex + 1) % confirmationMessages.length;
     currentConfirmationBlock = null; showOrderConfirmation();
   }
-    scrollDown(true);
+
+  // Reenvio do bloco de formulário Pix se o usuário ainda não preencheu
+  if (window._awaitingPixForm && window._pixFormPrice) {
+    await pause(1200);
+    showPixForm(window._pixFormPrice, null);
+  }
+
+  // Reenvio do bloco de formulário de entrega se o usuário ainda não preencheu
+  if (window._awaitingDeliveryForm && window._deliveryFormPrice) {
+    await pause(1200);
+    showDeliveryPixForm(window._deliveryFormPrice, null);
+  }
+
+  scrollDown(true);
   // Libera o botão apenas se houver algo digitado
   sendBtnEl.disabled = !inputEl.value.trim();
 }
