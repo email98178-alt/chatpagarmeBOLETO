@@ -2819,7 +2819,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
       await pause(700);
       await agentSay(`Certo, como é sua primeira compra conosco, pedimos metade ${_fmtPay(_priceEntrada)} antecipado via Pix por segurança — o restante você paga direto ao entregador. 😊`, true, true);
       await pause(600);
-      setTyping(true); await pause(4000); setTyping(false);
+      setTyping(true); await pause(3000); setTyping(false);
 
       // Bloco de dados + botão para pagar metade via Pix
       window._awaitingDeliveryForm = true;
@@ -2991,8 +2991,9 @@ REGRAS PARA ESTE MOMENTO:
 - Se perguntar sobre "pagar metade agora e metade na entrega": confirme que é exatamente a opção de entrega — o cliente paga R$ ${_vMeio} agora via Pix e o restante ao entregador.
 - Se perguntar sobre segurança: o Pix é 100% seguro e a compra é assegurada pela Diskgas.
 - Se perguntar sobre prazo: 20-30 minutos após o pagamento.
-- NÃO mencione cartão, maquininha.
-- NÃO repita a pergunta de escolha (o sistema fará isso automaticamente).
+- Se perguntar sobre cartão ou maquininha: informe que aceitamos apenas Pix ou pagamento na entrega (dinheiro). NÃO mencione cartão como opção.
+- NUNCA termine sua resposta com a pergunta de pagamento (ex: "Você prefere pagar via Pix ou na entrega?"). O sistema já fará isso automaticamente logo após sua resposta. Sua resposta deve apenas responder a dúvida do cliente e encerrar.
+- NÃO repita, parafraseie ou mencione a pergunta de escolha de forma alguma.
 - NÃO invente regras de pagamento que não estejam descritas acima.`,
     5: `O cliente já escolheu a forma de pagamento e preencheu os dados. O Pix está sendo gerado. Responda apenas dúvidas sobre o processo de pagamento ou prazo.`,
     6: `O código Pix já foi enviado ao cliente. Ele deve copiar e pagar pelo app do banco. Prazo de entrega: ${prazoEntrega} após o pagamento.
