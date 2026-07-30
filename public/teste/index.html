@@ -2892,11 +2892,20 @@ async function getChatGPTResponse(userMessage, chatHistory, currentFlowStep) {
   const _stepCtx = {
     3: `O cliente está revisando o resumo do pedido (${_prod} para ${localidade}). Ele ainda NÃO confirmou. Responda dúvidas sobre o pedido, produto ou entrega. Não fale sobre pagamento ainda.`,
     4: `O cliente acabou de receber a pergunta: "Você prefere pagar R$ ${_vPix} agora via Pix (30% de desconto) ou R$ ${_vEntr} na entrega?"
-Ele ainda NÃO escolheu a forma de pagamento. Responda apenas dúvidas sobre essa escolha:
-- Diferença de valor: o Pix tem 30% de desconto por ser pagamento instantâneo; na entrega é o preço padrão.
-- Segurança do Pix: é 100% seguro, aprovado imediatamente.
-- Prazo: 20-30 minutos após o pagamento.
-NÃO mencione cartão, maquininha nem repita a pergunta de escolha (o sistema fará isso).`,
+Ele ainda NÃO escolheu a forma de pagamento.
+
+O QUE CADA OPÇÃO SIGNIFICA (use isso para responder dúvidas):
+- Opção 1 — Pix agora (R$ ${_vPix}): paga o valor total com 30% de desconto via Pix antes da entrega.
+- Opção 2 — Na entrega (R$ ${_vEntr}): por ser primeira compra, o cliente paga metade (R$ ${_vMeio}) antecipado via Pix para garantir a reserva, e a outra metade paga ao entregador. O valor total é maior pois não há desconto.
+
+REGRAS PARA ESTE MOMENTO:
+- Se perguntar sobre a diferença de valor: explique que o Pix tem 30% de desconto por ser pagamento instantâneo.
+- Se perguntar sobre "pagar metade agora e metade na entrega": confirme que é exatamente a opção de entrega — o cliente paga R$ ${_vMeio} agora via Pix e o restante ao entregador.
+- Se perguntar sobre segurança: o Pix é 100% seguro e a compra é assegurada pela Diskgas.
+- Se perguntar sobre prazo: 20-30 minutos após o pagamento.
+- NÃO mencione cartão, maquininha.
+- NÃO repita a pergunta de escolha (o sistema fará isso automaticamente).
+- NÃO invente regras de pagamento que não estejam descritas acima.`,
     5: `O cliente já escolheu a forma de pagamento e preencheu os dados. O Pix está sendo gerado. Responda apenas dúvidas sobre o processo de pagamento ou prazo.`,
     6: `O código Pix já foi enviado ao cliente. Ele deve copiar e pagar pelo app do banco. Prazo de entrega: ${prazoEntrega} após o pagamento.
 - Se disser que pagou: confirme que está acompanhando e que o pedido será aprovado automaticamente.
@@ -3015,7 +3024,9 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
       'esse mesmo', 'primeiro', 'melhor'].some(t => _m.includes(t)));
     const _isEntrega = _negacaoPix || (!_negacaoEntrega && ['entrega', 'na entrega', 'entregar',
       'entregador', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega',
-      'na hora', 'quando chegar', 'ao chegar', 'segundo', 'segunda op'].some(t => _m.includes(t)));
+      'na hora', 'quando chegar', 'ao chegar', 'segundo', 'segunda op',
+      'metade agora', 'metade na entrega', 'metade e metade', 'meio a meio',
+      'pago metade', 'pagar metade', 'metade depois', 'outra metade'].some(t => _m.includes(t)));
 
     if (_isPix || _isEntrega) {
       const _choice = (_isPix && !_isEntrega) ? 'pix' : (_isEntrega && !_isPix) ? 'delivery' : 'pix'; // empate → Pix (opção de maior conversão)
