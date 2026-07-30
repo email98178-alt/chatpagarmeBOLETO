@@ -2188,11 +2188,25 @@ function showPixForm(pricePix, resolve) {
         <span class="pfc-field-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
       </div>
     </div>
-    <button class="modal-btn" id="pf_btn" type="button" style="margin-top:12px;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;box-shadow:0 4px 14px var(--brand-glow);border-radius:14px;">
-      Pagar Pix Agora
+    <button class="modal-btn" id="pf_btn" type="button" style="margin-top:12px;height:50px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:800;box-shadow:0 4px 16px rgba(16,185,129,.3);border-radius:14px;background:var(--green);">
+      Gerar Pix &mdash; R$ ${fmt(pricePix)}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+    <div style="text-align:center;margin-top:8px;font-size:10.5px;color:var(--text-3);">Ambiente seguro &middot; Dados protegidos</div>
   `;
+
+  // Insere cabeçalho contextual antes dos campos
+  wrapper.insertAdjacentHTML('afterbegin', `
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-2);">
+      <div style="width:34px;height:34px;border-radius:9px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:800;color:var(--text);">Dados para o Pix</div>
+        <div style="font-size:10.5px;color:var(--text-3);font-weight:500;margin-top:1px;">Preencha para gerar o código</div>
+      </div>
+    </div>
+  `);
 
   msgsEl.appendChild(wrapper);
   scrollDown();
@@ -2239,11 +2253,25 @@ function showDeliveryPixForm(priceEntrada, resolve) {
         <span class="pfc-field-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
       </div>
     </div>
-    <button class="modal-btn" id="df_btn" type="button" style="margin-top:12px;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;box-shadow:0 4px 14px var(--brand-glow);border-radius:14px;background:var(--brand);">
-      Pagar R$ ${fmt(priceEntrada)} Agora
+    <button class="modal-btn" id="df_btn" type="button" style="margin-top:12px;height:50px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:800;box-shadow:0 4px 14px var(--brand-glow);border-radius:14px;background:var(--brand);">
+      Confirmar &mdash; Pagar R$ ${fmt(priceEntrada)} via Pix
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+    <div style="text-align:center;margin-top:8px;font-size:10.5px;color:var(--text-3);">Restante pago ao entregador &middot; Garantia Diskgas</div>
   `;
+
+  // Insere cabeçalho contextual antes dos campos
+  wrapper.insertAdjacentHTML('afterbegin', `
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-2);">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:800;color:var(--text);">Reserva antecipada</div>
+        <div style="font-size:10.5px;color:var(--text-3);font-weight:500;margin-top:1px;">50% agora via Pix &middot; 50% na entrega</div>
+      </div>
+    </div>
+  `);
 
   msgsEl.appendChild(wrapper);
   scrollDown();
@@ -2686,7 +2714,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     const _fmtPay = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
 
     // Mensagem do agente com os valores dinâmicos — aguarda resposta livre do usuário
-    await agentSay(`Certo, você prefere pagar agora ${_fmtPay(_pricePix)} via Pix na promoção ou ${_fmtPay(_priceDelivery)} na entrega?`, true, true);
+    await agentSay(`Perfeito! Agora só falta o pagamento. Você prefere pagar ${_fmtPay(_pricePix)} agora via Pix — com 30% de desconto — ou ${_fmtPay(_priceDelivery)} na entrega?`, true, true);
 
     // Aguarda o usuário responder via chat (resolvido pelo doSend ao detectar intenção)
     window._awaitingPaymentChoice = true;
@@ -2695,7 +2723,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
 
     if (paymentChoice === 'pix') {
       await pause(600);
-      await agentSay('Certo, peço que preencha os campos abaixo para darmos continuidade.', true, true);
+      await agentSay('Ótimo! Preencha os dados abaixo para gerar o Pix. É rápido 😊', true, true);
       await pause(200);
 
       // Bloco de dados para Pix
@@ -2715,7 +2743,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
 
     } else if (paymentChoice === 'delivery') {
       await pause(600);
-      await agentSay(`Certo, porém verifiquei que é sua primeira compra conosco. Nesse caso só liberamos com pagamento de metade do valor antecipado por segurança — a outra metade poderá ser paga na entrega.`, true, true);
+      await agentSay(`Entendido! Como é sua primeira compra conosco, pedimos apenas ${_fmtPay(_priceEntrada)} antecipado via Pix para garantir a reserva — o restante você paga direto ao entregador. 😊`, true, true);
       await pause(200);
 
       // Bloco de dados + botão para pagar metade via Pix
@@ -3014,8 +3042,8 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   // DETECÇÃO DE ESCOLHA DE PAGAMENTO (step 4)
   if (window._awaitingPaymentChoice && confirmationResolve) {
     const _m = mensagemMinuscula;
-    const _isPix = ['pix', 'agora', 'promo', 'desconto', 'vista', 'pagar agora', 'pix agora'].some(t => _m.includes(t));
-    const _isEntrega = ['entrega', 'na entrega', 'entregar', 'entregador', 'receber'].some(t => _m.includes(t));
+    const _isPix = ['pix', 'agora', 'promo', 'desconto', 'vista', 'pagar agora', 'pix agora', 'quero pix', 'pelo pix', 'no pix', 'pagar pix', 'pago pix', 'prefiro pix', 'prefiro agora', 'quero agora', 'agora mesmo'].some(t => _m.includes(t));
+    const _isEntrega = ['entrega', 'na entrega', 'entregar', 'entregador', 'receber', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega', 'na hora', 'quando chegar', 'ao chegar'].some(t => _m.includes(t));
     if (_isPix || _isEntrega) {
       const _choice = _isPix ? 'pix' : 'delivery';
       const _resolve = confirmationResolve;
