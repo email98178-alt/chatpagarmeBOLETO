@@ -2703,10 +2703,10 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     }
   }
   if (window._currentFlowStep === 4) {
-    const spVal = addSpinner("Validando dados do pedido...");
-    await pause(3500); spVal.remove();
-    addSys('Pedido validado com sucesso', 'ok');
-    await pause(800);
+    const spVal = addSpinner('Processando pedido...');
+    await pause(2500); spVal.remove();
+    addSys('Pedido confirmado com sucesso', 'ok');
+    await pause(600);
 
     const _pricePix = ORDER.productPrice;
     const _priceDelivery = ORDER.productPrice * 1.30;
@@ -2732,11 +2732,11 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
         showPixForm(_pricePix, resolve);
       });
 
-      const spVal2 = addSpinner('Preparando chave de pagamento...');
-      await pause(3000);
+      const spVal2 = addSpinner('Registrando dados...');
+      await pause(1800);
       spVal2.remove();
-      addSys('Pagamento via Pix selecionado', 'ok');
-      await pause(1000);
+      addSys('Dados confirmados', 'ok');
+      await pause(600);
 
       window._currentFlowStep = 5;
       saveChatHistory();
@@ -2753,12 +2753,13 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
       });
 
       ORDER.productPrice = _priceEntrada; // cobra apenas a metade via Pix
+      window._isPartialPayment = true; // flag para o step 5 saber que é pagamento parcial
 
-      const spVal3 = addSpinner('Registrando forma de pagamento...');
-      await pause(3000);
+      const spVal3 = addSpinner('Registrando dados...');
+      await pause(1800);
       spVal3.remove();
-      addSys('Pagamento parcial registrado', 'ok');
-      await pause(1000);
+      addSys('Dados confirmados', 'ok');
+      await pause(600);
 
       window._currentFlowStep = 5;
       saveChatHistory();
@@ -2768,7 +2769,10 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     window._currentFlowStep = 6; saveChatHistory();
     const localBase = ORDER.location || 'sua região';
     const localFinal = localBase === 'sua região' ? localBase : `${localBase} e região`;
-    await agentSay(`Certo, já vou enviar o pix, um segundo...`);
+    const _step5Msg = window._isPartialPayment
+      ? 'Perfeito! Vou gerar o Pix para a reserva agora, um segundo...'
+      : 'Certo, já vou enviar o Pix, um segundo...';
+    await agentSay(_step5Msg);
     await pause(900); setTyping(true); await pause(5500); setTyping(false);
 await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela sua entrega 😃`, 'agent', true);
     await pause(600);
@@ -2799,7 +2803,10 @@ sendTranscript();
 
 // Removida a pausa de 1000ms para o efeito de digitação começar imediatamente
 // Adicionado o parâmetro 'true' no final para pular o atraso inicial do agentSay
-await agentSay(`Após o pagamento o prazo de entrega é de 20-30 minutos. 😃`, true, true);
+const _afterPixMsg = window._isPartialPayment
+  ? `Após o pagamento da reserva o prazo de entrega é de 20-30 minutos. O restante você paga ao entregador. 😃`
+  : `Após o pagamento o prazo de entrega é de 20-30 minutos. 😃`;
+await agentSay(_afterPixMsg, true, true);
 
 
 await pause(1000); // Pequena pausa para naturalidade
@@ -2992,7 +2999,28 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   }
 
 
-          const mensagemMinuscula = originalText.toLowerCase();
+  const mensagemMinuscula = originalText.toLowerCase();
+
+  // DETECÇÃO DE ESCOLHA DE PAGAMENTO (step 4) — DEVE VIR ANTES DE QUALQUER FILTRO
+  if (window._awaitingPaymentChoice && confirmationResolve) {
+    const _m = mensagemMinuscula;
+    const _isPix = ['pix', 'agora', 'promo', 'desconto', 'vista', 'pagar agora', 'pix agora', 'quero pix', 'pelo pix', 'no pix', 'pagar pix', 'pago pix', 'prefiro pix', 'prefiro agora', 'quero agora', 'agora mesmo', 'sim', 'quero', 'esse', 'esse mesmo', 'primeiro', 'melhor'].some(t => _m.includes(t));
+    const _isEntrega = ['entrega', 'na entrega', 'entregar', 'entregador', 'receber', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega', 'na hora', 'quando chegar', 'ao chegar', 'segundo', 'segunda op'].some(t => _m.includes(t));
+    if (_isPix || _isEntrega) {
+      const _choice = _isPix ? 'pix' : 'delivery';
+      const _resolve = confirmationResolve;
+      confirmationResolve = null;
+      window._awaitingPaymentChoice = false;
+      _resolve(_choice);
+      sendBtnEl.disabled = !inputEl.value.trim();
+      return;
+    }
+    // Se não reconheceu, pede para esclarecer sem bloquear
+    setTyping(true); await pause(1200); setTyping(false);
+    await agentSay('Não entendi bem. Você prefere pagar agora via Pix ou pagar na entrega?', true, true);
+    sendBtnEl.disabled = !inputEl.value.trim();
+    return;
+  }
 
   // FILTRO: Bloqueio de contatos externos (Telefone, WhatsApp, etc)
   const termosBloqueados = ["telefone", "whatsapp", "contato", "zap", "ligo", "ligar", "ligação", "ligacao", "falar", "whatss", "ligar", "fone", "wpp", "chama", "call"];
@@ -3037,28 +3065,6 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
     return;
   }
 
-
-
-  // DETECÇÃO DE ESCOLHA DE PAGAMENTO (step 4)
-  if (window._awaitingPaymentChoice && confirmationResolve) {
-    const _m = mensagemMinuscula;
-    const _isPix = ['pix', 'agora', 'promo', 'desconto', 'vista', 'pagar agora', 'pix agora', 'quero pix', 'pelo pix', 'no pix', 'pagar pix', 'pago pix', 'prefiro pix', 'prefiro agora', 'quero agora', 'agora mesmo'].some(t => _m.includes(t));
-    const _isEntrega = ['entrega', 'na entrega', 'entregar', 'entregador', 'receber', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega', 'na hora', 'quando chegar', 'ao chegar'].some(t => _m.includes(t));
-    if (_isPix || _isEntrega) {
-      const _choice = _isPix ? 'pix' : 'delivery';
-      const _resolve = confirmationResolve;
-      confirmationResolve = null;
-      window._awaitingPaymentChoice = false;
-      _resolve(_choice);
-      sendBtnEl.disabled = !inputEl.value.trim();
-      return;
-    }
-    // Se não reconheceu, pede para esclarecer
-    setTyping(true); await pause(1200); setTyping(false);
-    await agentSay('Não entendi bem. Você prefere pagar agora via Pix ou pagar na entrega?', true, true);
-    sendBtnEl.disabled = !inputEl.value.trim();
-    return;
-  }
 
   // FILTRO EXISTENTE: Resposta automática para termos de pagamento em mensagens curtas
   const palavras = originalText.trim().split(/\s+/);
