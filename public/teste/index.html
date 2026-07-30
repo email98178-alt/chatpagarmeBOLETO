@@ -3271,7 +3271,16 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
 
   // Reenvio do bloco de formulário de entrega se o usuário ainda não preencheu
   if (window._awaitingDeliveryForm && window._deliveryFormPrice) {
-    await pause(1200);
+    const _deliveryReminderMsgs = [
+      'Sempre que estiver pronto, é só preencher os dados abaixo para confirmar a reserva. 😊',
+      'Pode preencher com calma, estou aqui aguardando! 😊',
+      'Assim que confirmar os dados, já inicio o processo de reserva para você. 😊',
+    ];
+    if (!window._deliveryReminderIdx) window._deliveryReminderIdx = 0;
+    await pause(3500);
+    const _dMsg = _deliveryReminderMsgs[window._deliveryReminderIdx % _deliveryReminderMsgs.length];
+    window._deliveryReminderIdx++;
+    await agentSay(_dMsg, true, true);
     showDeliveryPixForm(window._deliveryFormPrice, null);
   }
 
