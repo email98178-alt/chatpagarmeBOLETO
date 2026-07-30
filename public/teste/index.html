@@ -3015,9 +3015,17 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
       sendBtnEl.disabled = !inputEl.value.trim();
       return;
     }
-    // Se não reconheceu, pede para esclarecer sem bloquear
-    setTyping(true); await pause(1200); setTyping(false);
-    await agentSay('Não entendi bem. Você prefere pagar agora via Pix ou pagar na entrega?', true, true);
+    // Não reconheceu a intenção: responde com IA e reenv ia a pergunta de pagamento
+    setTyping(true);
+    const _aiReply = await getChatGPTResponse(originalText, getChatHistoryForAI(), window._currentFlowStep);
+    setTyping(false);
+    await agentSay(_aiReply, true, true);
+    await pause(800);
+    // Reenvia a pergunta de pagamento com os valores atuais
+    const _pp = ORDER.productPrice;
+    const _pd = ORDER.productPrice * 1.30;
+    const _fp = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
+    await agentSay(`Você prefere pagar ${_fp(_pp)} agora via Pix — com 30% de desconto — ou ${_fp(_pd)} na entrega?`, true, true);
     sendBtnEl.disabled = !inputEl.value.trim();
     return;
   }
