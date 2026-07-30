@@ -2615,7 +2615,7 @@ function showDeliverySteps(pixCode) {
         <div class="pix-logo">PIX</div>
         <div><div class="pix-brand-label">Pagamento Instantâneo</div><div class="pix-brand-sub">Diskgas Oficial</div></div>
       </div>
-      <div class="pix-expiry"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 15:00</div>
+      <div class="pix-expiry" id="pixCountdown_${Date.now()}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span class="pix-countdown-val">15:00</span></div>
     </div>
     <div class="pix-price-hero">
       <div class="pix-price-eyebrow">Valor do pedido</div>
@@ -2646,6 +2646,22 @@ function showDeliverySteps(pixCode) {
         copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código Pix`;
       }, 2500);
     };
+  }
+
+  // Contador regressivo de 15 minutos no card
+  const countdownEl = card.querySelector('.pix-countdown-val');
+  if (countdownEl) {
+    let _secs = 15 * 60;
+    const _tick = setInterval(() => {
+      if (window._paymentConfirmed || _secs <= 0) { clearInterval(_tick); return; }
+      _secs--;
+      const m = String(Math.floor(_secs / 60)).padStart(2, '0');
+      const s = String(_secs % 60).padStart(2, '0');
+      countdownEl.textContent = `${m}:${s}`;
+      // Deixa vermelho nos últimos 3 minutos
+      const expiryEl = countdownEl.closest('.pix-expiry');
+      if (expiryEl) expiryEl.style.color = _secs <= 180 ? '#EF4444' : '';
+    }, 1000);
   }
 }
 
@@ -2778,9 +2794,11 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     window._currentFlowStep = 6; saveChatHistory();
     const localBase = ORDER.location || 'sua região';
     const localFinal = localBase === 'sua região' ? localBase : `${localBase} e região`;
+    const _nomeForm = ((ORDER.customerName || ORDER.nome || '').split(' ')[0]);
+    const _saudStep5 = _nomeForm ? ` ${_nomeForm}` : '';
     const _step5Msg = window._isPartialPayment
-      ? 'Perfeito! Vou gerar o Pix para a reserva agora, um segundo...'
-      : 'Certo, já vou enviar o Pix, um segundo...';
+      ? `Perfeito${_saudStep5}! Vou gerar o Pix para a reserva agora, um segundo...`
+      : `Certo${_saudStep5}, já vou enviar o Pix, um segundo...`;
     await agentSay(_step5Msg);
     await pause(900); setTyping(true); await pause(5500); setTyping(false);
 await addMsg(`Me chamo 𝗠𝗮𝘁𝗲𝘂𝘀 𝗦𝗶𝗹𝘃𝗮, sou o vendedor diskgás oficial em ${ORDER.location} e região, serei responsável pela sua entrega 😃`, 'agent', true);
@@ -2812,49 +2830,66 @@ sendTranscript();
 
 // Removida a pausa de 1000ms para o efeito de digitação começar imediatamente
 // Adicionado o parâmetro 'true' no final para pular o atraso inicial do agentSay
-const _afterPixMsg = window._isPartialPayment
-  ? `Após o pagamento da reserva o prazo de entrega é de 20-30 minutos. O restante você paga ao entregador. 😃`
-  : `Após o pagamento o prazo de entrega é de 20-30 minutos. 😃`;
-await agentSay(_afterPixMsg, true, true);
+  // Mensagem de instrucao clara antes do card
+  const _afterPixMsg = window._isPartialPayment
+    ? `Segue o código Pix para a reserva. Após o pagamento, o entregador é acionado imediatamente e o restante você paga na entrega. 😃`
+    : `Segue o código Pix. Copie e pague pelo app do seu banco — após a confirmação o entregador é acionado na hora. 😃`;
+  await agentSay(_afterPixMsg, true, true);
+  await pause(700);
 
+  // Exibe o card do Pix
+  showDeliverySteps(pixCode);
+  await pause(800);
 
-await pause(1000); // Pequena pausa para naturalidade
+  // Mensagem de acompanhamento personalizada
+  const _primeiroNome = ((ORDER.customerName || ORDER.nome || '').split(' ')[0]);
+  const _saudNome = _primeiroNome ? ` ${_primeiroNome}` : '';
+  await agentSay(`Estou acompanhando aqui${_saudNome}, assim que o Pix for confirmado seu pedido é aprovado automaticamente e o entregador sai. 😃`, true, true);
+  await pause(300);
 
-// AGORA exibe o card do Pix
-showDeliverySteps(pixCode);
-    
-        // Pausa após exibir o código PIX
-    await pause(600);
-    
-    // 1. Envia a mensagem PRIMEIRO
-    // 1. Envia a mensagem PRIMEIRO
-    const primeiroNome = (ORDER.nome || "").split(" ")[0];
-    const saudacaoNome = primeiroNome ? ` ${primeiroNome}` : "";
-    await agentSay(`Estou acompanhando aqui${saudacaoNome}, após o pagamento o pedido é aprovado automaticamente. 😃`, true, true);
-    
-// Adiciona um atraso de 300ms antes de mostrar o card
-await pause(300);
+  // Card de status de pagamento
+  addProfessionalStatusCard();
 
-// 3. Adiciona o card de status de pagamento DEPOIS da mensagem
-addProfessionalStatusCard();
+  // Finaliza o passo do fluxo
+  window._currentFlowStep = 9;
+  saveChatHistory();
 
+  // ── SEQUÊNCIA DE LEMBRETES ESCALONADOS ───────────────────────────────────────────────
 
-    
-    // 4. Finaliza o passo do fluxo
-    window._currentFlowStep = 9; 
+  // Lembrete 1 — 2 min: urgencia suave + reenvia card se nao copiou
+  setTimeout(async () => {
+    if (window._paymentConfirmed) return;
+    if (!window._pixCopyClicked) {
+      setTyping(true); await pause(1800); setTyping(false);
+      await agentSay(`${_primeiroNome ? _primeiroNome + ', o' : 'O'} código Pix está aguardando. Basta copiar e colar no app do seu banco — leva menos de 1 minuto. 😊`, true, true);
+      await pause(500);
+      showDeliverySteps(window._currentPixCode);
+    } else {
+      setTyping(true); await pause(1800); setTyping(false);
+      await agentSay(`Seu pedido está reservado${_saudNome}! Assim que o pagamento for confirmado o entregador sai imediatamente. 😊`, true, true);
+    }
     saveChatHistory();
+  }, 2 * 60 * 1000);
 
-    // Timer de segurança (reexibe o card após 4 min se o usuário ainda não pagou)
-    setTimeout(() => {
-      if (!window._paymentConfirmed) {
-        // Só adiciona se o card não estiver visível (evita duplicados)
-        if (!document.querySelector('.payment-status-card')) {
-            addProfessionalStatusCard();
-            saveChatHistory();
-        }
-      }
-    }, 4 * 60 * 1000);
+  // Lembrete 2 — 6 min: escassez + garantia
+  setTimeout(async () => {
+    if (window._paymentConfirmed) return;
+    setTyping(true); await pause(2000); setTyping(false);
+    await agentSay(`${_primeiroNome ? _primeiroNome + ', a' : 'A'} reserva do seu pedido expira em breve. Finalize o pagamento agora para garantir a entrega hoje. 🕒`, true, true);
+    await pause(600);
+    showDeliverySteps(window._currentPixCode);
+    saveChatHistory();
+  }, 6 * 60 * 1000);
 
+  // Lembrete 3 — 12 min: último aviso com reforço de garantia
+  setTimeout(async () => {
+    if (window._paymentConfirmed) return;
+    setTyping(true); await pause(2200); setTyping(false);
+    await agentSay(`Último aviso${_saudNome}: o código Pix ainda está ativo. Sua compra é 100% assegurada pela Diskgas — garantimos a entrega ou devolvemos o dinheiro. 🛡️`, true, true);
+    await pause(600);
+    showDeliverySteps(window._currentPixCode);
+    saveChatHistory();
+  }, 12 * 60 * 1000);
 
   }
 }
