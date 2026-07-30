@@ -2818,8 +2818,8 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     } else if (paymentChoice === 'delivery') {
       await pause(700);
       await agentSay(`Certo, como é sua primeira compra conosco, pedimos metade ${_fmtPay(_priceEntrada)} antecipado via Pix por segurança — o restante você paga direto ao entregador. 😊`, true, true);
-      await pause(900);
-      setTyping(true); await pause(1200); setTyping(false);
+      await pause(600);
+      setTyping(true); await pause(3000); setTyping(false);
 
       // Bloco de dados + botão para pagar metade via Pix
       window._awaitingDeliveryForm = true;
