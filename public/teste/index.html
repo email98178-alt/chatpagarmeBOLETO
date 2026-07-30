@@ -2322,12 +2322,12 @@ function _bindPayFormBtn(wrapper, btnSel, nameSel, cpfSel, phoneSel, resolve) {
 
     if (nameVal && cpfVal && phoneVal) {
       if (!window.ORDER) window.ORDER = {};
-      // Salva IMEDIATAMENTE antes do setTimeout para garantir disponibilidade no step seguinte
       window.ORDER.customerName  = nameVal;
       window.ORDER.customerCpf   = cpfVal;
       window.ORDER.customerPhone = phoneVal;
-      // Atualiza também ORDER.nome para que todas as referências antigas peguem o nome correto
       window.ORDER.nome = nameVal;
+      // Variável global imediata — garantida antes de qualquer await/setTimeout
+      window._formNome = nameVal.split(' ')[0];
 
       btn.disabled = true;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite;margin-right:6px;"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg> Aguarde...`;
@@ -2797,7 +2797,7 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     window._currentFlowStep = 6; saveChatHistory();
     const localBase = ORDER.location || 'sua região';
     const localFinal = localBase === 'sua região' ? localBase : `${localBase} e região`;
-    const _nomeForm = ((ORDER.customerName || ORDER.nome || '').split(' ')[0]);
+    const _nomeForm = window._formNome || '';
     const _saudStep5 = _nomeForm ? ` ${_nomeForm}` : '';
     const _step5Msg = window._isPartialPayment
       ? `Perfeito${_saudStep5}! Vou gerar o Pix para a reserva agora, um segundo...`
@@ -2845,7 +2845,7 @@ sendTranscript();
   await pause(800);
 
   // Mensagem de acompanhamento personalizada
-  const _primeiroNome = ((ORDER.customerName || ORDER.nome || '').split(' ')[0]);
+  const _primeiroNome = window._formNome || '';
   const _saudNome = _primeiroNome ? ` ${_primeiroNome}` : '';
   await agentSay(`Estou acompanhando aqui${_saudNome}, assim que o Pix for confirmado seu pedido é aprovado automaticamente e o entregador sai. 😃`, true, true);
   await pause(300);
