@@ -3000,10 +3000,25 @@ if (!window._orderConfirmationShown && window._currentFlowStep <= 3) {
   // DETECÇÃO DE ESCOLHA DE PAGAMENTO (step 4) — DEVE VIR ANTES DE QUALQUER FILTRO
   if (window._awaitingPaymentChoice && confirmationResolve) {
     const _m = mensagemMinuscula;
-    const _isPix = ['pix', 'agora', 'promo', 'desconto', 'vista', 'pagar agora', 'pix agora', 'quero pix', 'pelo pix', 'no pix', 'pagar pix', 'pago pix', 'prefiro pix', 'prefiro agora', 'quero agora', 'agora mesmo', 'sim', 'quero', 'esse', 'esse mesmo', 'primeiro', 'melhor'].some(t => _m.includes(t));
-    const _isEntrega = ['entrega', 'na entrega', 'entregar', 'entregador', 'receber', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega', 'na hora', 'quando chegar', 'ao chegar', 'segundo', 'segunda op'].some(t => _m.includes(t));
+
+    // Detecta negação explícita antes de qualquer classificação
+    const _negacaoEntrega = ['não pago na entrega', 'nao pago na entrega', 'não quero entrega', 'nao quero entrega',
+      'não prefiro entrega', 'nao prefiro entrega', 'não na entrega', 'nao na entrega',
+      'sem entrega', 'não quero pagar na entrega', 'nao quero pagar na entrega'].some(t => _m.includes(t));
+    const _negacaoPix = ['não pago pix', 'nao pago pix', 'não quero pix', 'nao quero pix',
+      'não prefiro pix', 'nao prefiro pix', 'sem pix', 'não via pix', 'nao via pix'].some(t => _m.includes(t));
+
+    // Negação de entrega → escolha Pix; negação de Pix → escolha entrega
+    const _isPix = _negacaoEntrega || (!_negacaoPix && ['pix', 'agora', 'promo', 'desconto', 'vista',
+      'pagar agora', 'pix agora', 'quero pix', 'pelo pix', 'no pix', 'pagar pix', 'pago pix',
+      'prefiro pix', 'prefiro agora', 'quero agora', 'agora mesmo', 'sim', 'quero', 'esse',
+      'esse mesmo', 'primeiro', 'melhor'].some(t => _m.includes(t)));
+    const _isEntrega = _negacaoPix || (!_negacaoEntrega && ['entrega', 'na entrega', 'entregar',
+      'entregador', 'quero entrega', 'prefiro entrega', 'pagar na entrega', 'pago na entrega',
+      'na hora', 'quando chegar', 'ao chegar', 'segundo', 'segunda op'].some(t => _m.includes(t)));
+
     if (_isPix || _isEntrega) {
-      const _choice = _isPix ? 'pix' : 'delivery';
+      const _choice = (_isPix && !_isEntrega) ? 'pix' : (_isEntrega && !_isPix) ? 'delivery' : 'pix'; // empate → Pix (opção de maior conversão)
       const _resolve = confirmationResolve;
       confirmationResolve = null;
       window._awaitingPaymentChoice = false;
