@@ -2298,12 +2298,18 @@ function _bindPayFormBtn(wrapper, btnSel, nameSel, cpfSel, phoneSel, resolve) {
   inputs.forEach(input => {
     input.addEventListener('focus', () => {
       input.classList.remove('error');
-      if (footer) footer.style.display = 'none';
+      // Aguarda o teclado abrir de fato antes de esconder o footer
       setTimeout(() => {
-        if (!window.visualViewport) return;
-        const vv = window.visualViewport;
-        const rect = input.getBoundingClientRect();
-        if (rect.bottom > vv.height - 16) msgsEl.scrollTop += rect.bottom - (vv.height - 16);
+        const keyboardOpen = window.visualViewport
+          ? window.visualViewport.height < window.innerHeight * 0.75
+          : false;
+        if (keyboardOpen && footer) footer.style.display = 'none';
+        // Ajusta scroll para o campo ficar visível acima do teclado
+        if (window.visualViewport) {
+          const vv = window.visualViewport;
+          const rect = input.getBoundingClientRect();
+          if (rect.bottom > vv.height - 16) msgsEl.scrollTop += rect.bottom - (vv.height - 16);
+        }
       }, 350);
     });
     input.addEventListener('blur', () => {
@@ -2581,15 +2587,17 @@ function showPaymentOptions(pricePix, priceDelivery) {
 
         inputs.forEach(input => {
             input.addEventListener('focus', () => {
-                // Remove o estado de erro assim que o usuário toca no campo
                 input.classList.remove('error');
-                // Aguarda o teclado abrir e então ajusta o scroll
-                setTimeout(() => scrollInputIntoView(input), 350);
-                // Esconde o footer do chat enquanto o teclado está aberto neste formulário
-                if (footer) footer.style.display = 'none';
+                // Aguarda o teclado abrir de fato antes de esconder o footer
+                setTimeout(() => {
+                    const keyboardOpen = window.visualViewport
+                        ? window.visualViewport.height < window.innerHeight * 0.75
+                        : false;
+                    if (keyboardOpen && footer) footer.style.display = 'none';
+                    scrollInputIntoView(input);
+                }, 350);
             });
             input.addEventListener('blur', () => {
-                // Reexibe o footer quando sai do campo
                 setTimeout(() => {
                     const anyFocused = Array.from(inputs).includes(document.activeElement);
                     if (!anyFocused && footer) footer.style.display = 'flex';
