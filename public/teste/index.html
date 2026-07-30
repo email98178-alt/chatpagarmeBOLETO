@@ -647,6 +647,78 @@ html,body{
   display: block;
 }
 /* Estilo específico para o container do formulário de pagamento */
+/* ── PAYMENT QUICK-REPLY BUTTONS ── */
+.pay-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  align-self: flex-start;
+  width: 100%;
+  max-width: 280px;
+}
+
+.pay-choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-2);
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  width: 100%;
+}
+
+.pay-choice-btn:active {
+  transform: scale(0.97);
+}
+
+.pay-choice-btn.pix {
+  border-color: rgba(16,185,129,.35);
+  background: #F0FDF4;
+  color: var(--green-dk);
+}
+
+.pay-choice-btn.pix:hover {
+  border-color: #10B981;
+  background: #DCFCE7;
+}
+
+.pay-choice-btn.delivery:hover {
+  border-color: var(--brand-mid);
+  background: var(--brand-lt);
+}
+
+.pay-choice-btn .pci {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pay-choice-btn.pix .pci { background: #DCFCE7; color: #10B981; }
+.pay-choice-btn.delivery .pci { background: var(--surface-2); color: var(--text-3); }
+
+.pay-choice-btn .pci-text { flex: 1; min-width: 0; }
+.pay-choice-btn .pci-title { font-size: 13px; font-weight: 700; line-height: 1.2; }
+.pay-choice-btn .pci-sub { font-size: 11px; font-weight: 500; margin-top: 1px; opacity: 0.75; }
+.pay-choice-btn.pix .pci-sub { color: var(--green-dk); opacity: 1; font-weight: 700; }
+.pay-choice-btn .pci-price { font-size: 14px; font-weight: 800; letter-spacing: -0.4px; flex-shrink: 0; }
+.pay-choice-btn.pix .pci-price { color: var(--green-dk); }
+.pay-choice-btn.delivery .pci-price { color: var(--text-2); }
+
+/* ── PAYMENT FORM CONTAINER ── */
 .payment-form-container {
   padding-top: 14px;
   border-top: 1px solid var(--border-2);
@@ -2084,9 +2156,9 @@ function showOrderConfirmation() {
 }
 
 
-function showPaymentOptions() {
-  const pricePix = ORDER.productPrice;
-  const priceDelivery = ORDER.productPrice * 1.30; // Acréscimo de 30%
+function showPaymentOptions(pricePix, priceDelivery) {
+  if (pricePix === undefined) pricePix = ORDER.productPrice;
+  if (priceDelivery === undefined) priceDelivery = ORDER.productPrice * 1.30;
   const fmt = (v) => v.toFixed(2).replace('.', ',');
   const _diaSemana = new Date().getDay();
   const _fimDeSemana = (_diaSemana === 0 || _diaSemana === 6);
@@ -2094,86 +2166,53 @@ function showPaymentOptions() {
     ? 'Disponível apenas de Segunda a Sexta'
     : 'Disponível apenas aos Sábados e Domingos';
 
+  // Wrapper de botões de resposta rápida
   const card = document.createElement('div');
-  card.className = 'steps-card payment-selection-block'; 
-  card.style.cssText = 'width:100%;max-width:340px;padding:20px;border-radius:24px;border:1px solid var(--border-2);box-shadow:0 12px 30px rgba(0,0,0,0.08);background:#fff;';
+  card.className = 'pay-choices';
   
-  card.innerHTML = `
-    <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px;">
-      <div style="width:38px;height:38px;border-radius:11px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);flex-shrink:0;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-      </div>
-      <div>
-        <div style="font-size:13.5px;font-weight:800;color:var(--text);">Forma de Pagamento</div>
-        <div style="font-size:11px;color:var(--text-3);font-weight:500;margin-top:1px;">Selecione como prefere pagar</div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:10px;">
-
-      <!-- OPÇÃO PIX -->
-      <div class="payment-option-card" id="payNowCard">
-        <div class="check-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:42px;height:42px;border-radius:11px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:var(--text);">Pix</div>
-            <div style="font-size:11px;color:var(--green-dk);font-weight:600;margin-top:1px;">Melhor preço · 30% OFF</div>
-          </div>
-          <div class="payment-price-tag">
-            <div class="payment-price-main" style="color:var(--green-dk);">R$ ${fmt(pricePix)}</div>
-            <div class="payment-price-sub">à vista</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- OPÇÃO ENTREGA -->
-      <div class="payment-option-card" id="payOnDeliveryCard">
-        <div class="check-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:42px;height:42px;border-radius:11px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:var(--text);">Na Entrega</div>
-            <div style="font-size:11px;color:var(--text-3);font-weight:500;margin-top:1px;">${deliveryAvailability}</div>
-          </div>
-          <div class="payment-price-tag">
-            <div class="payment-price-main" style="color:var(--text-2);">R$ ${fmt(priceDelivery)}</div>
-            <div class="payment-price-sub">valor cheio</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
+  // Botão Pix
+  const payNowCard = document.createElement('button');
+  payNowCard.className = 'pay-choice-btn pix';
+  payNowCard.id = 'payNowCard';
+  payNowCard.innerHTML = `
+    <span class="pci">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    </span>
+    <span class="pci-text">
+      <span class="pci-title">Pix — Pagar Agora</span>
+      <span class="pci-sub">Melhor preço · 30% OFF</span>
+    </span>
+    <span class="pci-price">R$ ${fmt(pricePix)}</span>
   `;
+
+  // Botão Entrega
+  const payOnDeliveryCard = document.createElement('button');
+  payOnDeliveryCard.className = 'pay-choice-btn delivery';
+  payOnDeliveryCard.id = 'payOnDeliveryCard';
+  payOnDeliveryCard.innerHTML = `
+    <span class="pci">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    </span>
+    <span class="pci-text">
+      <span class="pci-title">Na Entrega</span>
+      <span class="pci-sub">${deliveryAvailability}</span>
+    </span>
+    <span class="pci-price">R$ ${fmt(priceDelivery)}</span>
+  `;
+
+  card.appendChild(payNowCard);
+  card.appendChild(payOnDeliveryCard);
   msgsEl.appendChild(card);
   scrollDown();
 
-  const payNowCard = card.querySelector('#payNowCard');
-  const payOnDeliveryCard = card.querySelector('#payOnDeliveryCard');
-
-      const finalizeSelection = (selectedCard, choice) => {
-    // Garante que a barra esteja visível ao finalizar
+  const finalizeSelection = (selectedCard, choice) => {
     const footer = document.querySelector('.footer');
     if (footer) footer.style.display = 'flex';
-
-    card.style.opacity = '0.95';
-
+    // Trava o wrapper inteiro após confirmação
     card.style.pointerEvents = 'none';
-
-    selectedCard.style.borderColor = 'var(--brand)';
-    selectedCard.style.background = 'var(--brand-lt)';
-    
-    // Correção do seletor: agora usamos .check-badge
-    const badge = selectedCard.querySelector('.check-badge');
-    if (badge) badge.style.opacity = '1';
-    
-        if (confirmationResolve) {
+    card.style.opacity = '0.9';
+    if (confirmationResolve) {
       confirmationResolve(choice);
-      // Limpa a variável para evitar chamadas duplicadas
       confirmationResolve = null;
     }
   };
@@ -2183,28 +2222,24 @@ function showPaymentOptions() {
 
 
 
-    let activeFormContainer = null; // Variável para rastrear o formulário ativo
-
-                    function handlePaymentSelection(selectedCard, choice) {
-        // 1. TRAVA DE SEGURANÇA: Se o card já estiver aberto, não reinicia a função
-        // Isso evita que o formulário "resete" ao clicar nos campos ou no botão
+  function handlePaymentSelection(selectedCard, choice) {
+        // Trava: se o formulário já está aberto neste botão, não reinicia
         if (selectedCard.classList.contains('selected') && selectedCard.querySelector('.payment-form-container')) {
-            return; 
+            return;
         }
 
-        // 2. Reset de estado dos outros cards
-        document.querySelectorAll('.payment-option-card').forEach(card => {
-            if (card !== selectedCard) {
-                card.classList.remove('selected');
-                const f = card.querySelector('.payment-form-container');
-                if (f) f.style.display = 'none';
+        // Reset dos outros botões
+        [payNowCard, payOnDeliveryCard].forEach(btn => {
+            if (btn !== selectedCard) {
+                btn.classList.remove('selected');
+                const f = btn.querySelector('.payment-form-container');
+                if (f) f.remove();
             }
         });
 
         selectedCard.classList.add('selected');
 
-        // 3. Criação/Exibição do formulário
-                // 3. Criação/Exibição do formulário
+        // Criação/Exibição do formulário
         let formContainer = selectedCard.querySelector('.payment-form-container');
         if (!formContainer) {
             // Pré-preenche com dados já conhecidos da URL (nome e CPF)
@@ -2477,12 +2512,17 @@ await agentSay(`Sou Mateus, vendedor autorizado Diskgas em ${ORDER.location} e R
     addSys('Pedido validado com sucesso', 'ok');
     await pause(800);
 
-    await agentSay("Certo, você prefere pagar agora via Pix ou na entrega?", true, true);
-    await pause(300);
+    const _pricePix = ORDER.productPrice;
+    const _priceDelivery = ORDER.productPrice * 1.30;
+    const _fmtPay = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
+
+    // Mensagem do agente com os valores dinâmicos
+    await agentSay(`Certo, você prefere pagar agora ${_fmtPay(_pricePix)} via Pix na promoção ou ${_fmtPay(_priceDelivery)} na entrega?`, true, true);
+    await pause(200);
 
     const paymentChoice = await new Promise(resolve => {
       confirmationResolve = resolve;
-      showPaymentOptions();
+      showPaymentOptions(_pricePix, _priceDelivery);
     });
 
     if (paymentChoice === 'pix') {
