@@ -9,10 +9,18 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: PAGARME_SECRET_KEY
+      - key: PAGARME_SECRET_KEY_X
+        sync: false
+      - key: PAGARME_SECRET_KEY_Y
+        sync: false
+      - key: PAGARME_SECRET_KEY_Z
         sync: false
       - key: PAGARME_API_URL
         value: https://api.pagar.me/core/v5
+      - key: PAGARME_TIME_ZONE
+        value: America/Sao_Paulo
+      - key: PAGARME_WEEKEND_ACCOUNT
+        value: X
       - key: PAGARME_BOLETO_DUE_DAYS
         value: 3
       - key: PAGARME_BOLETO_INSTRUCTIONS
