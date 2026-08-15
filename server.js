@@ -21,7 +21,16 @@ const io = new Server(server, {
 
 const PORT = Number(process.env.PORT) || 3000;
 const PAGARME_API_URL = String(process.env.PAGARME_API_URL || 'https://api.pagar.me/core/v5').replace(/\/+$/, '');
-const PAGARME_SECRET_KEY = String(process.env.PAGARME_SECRET_KEY || '').trim();
+const PAGARME_TIME_ZONE = String(process.env.PAGARME_TIME_ZONE || 'America/Sao_Paulo').trim() || 'America/Sao_Paulo';
+const PAGARME_SECRET_KEYS = Object.freeze({
+  X: String(process.env.PAGARME_SECRET_KEY_X || process.env.PAGARME_SECRET_KEY || '').trim(),
+  Y: String(process.env.PAGARME_SECRET_KEY_Y || '').trim(),
+  Z: String(process.env.PAGARME_SECRET_KEY_Z || '').trim()
+});
+const configuredWeekendAccount = String(process.env.PAGARME_WEEKEND_ACCOUNT || 'X').trim().toUpperCase();
+const PAGARME_WEEKEND_ACCOUNT = ['X', 'Y', 'Z'].includes(configuredWeekendAccount)
+  ? configuredWeekendAccount
+  : 'X';
 const PAGARME_BOLETO_DUE_DAYS = normalizeInteger(process.env.PAGARME_BOLETO_DUE_DAYS, 3, 1, 30);
 const PAGARME_BOLETO_INSTRUCTIONS = String(
   process.env.PAGARME_BOLETO_INSTRUCTIONS || 'Pagar até o vencimento.'
@@ -706,6 +715,52 @@ const DEFAULT_BILLING_CUSTOMER = Object.freeze({
 let billingRotationIndex = 0;
 let billingRotationQueue = Promise.resolve();
 const billingProfileByIdempotencyKey = new Map();
+const pagarmeAccountByIdempotencyKey = new Map();
+
+const PAGARME_WEEKDAY_ACCOUNT = Object.freeze({
+  Mon: 'X',
+  Tue: 'X',
+  Wed: 'Y',
+  Thu: 'Y',
+  Fri: 'Z'
+});
+
+function getPagarmeAccountForDate(date = new Date()) {
+  const targetDate = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(targetDate.getTime())) return PAGARME_WEEKEND_ACCOUNT;
+
+  let weekday;
+  try {
+    weekday = new Intl.DateTimeFormat('en-US', {
+      timeZone: PAGARME_TIME_ZONE,
+      weekday: 'short'
+    }).format(targetDate);
+  } catch (error) {
+    console.error('Fuso horário inválido em PAGARME_TIME_ZONE:', PAGARME_TIME_ZONE);
+    weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(targetDate);
+  }
+
+  return PAGARME_WEEKDAY_ACCOUNT[weekday] || PAGARME_WEEKEND_ACCOUNT;
+}
+
+function getPagarmeAccountForIdempotencyKey(idempotencyKey, date = new Date()) {
+  const existingAccount = pagarmeAccountByIdempotencyKey.get(idempotencyKey);
+  if (existingAccount) return existingAccount;
+
+  const account = getPagarmeAccountForDate(date);
+  pagarmeAccountByIdempotencyKey.set(idempotencyKey, account);
+  if (pagarmeAccountByIdempotencyKey.size > 5000) {
+    const oldestKey = pagarmeAccountByIdempotencyKey.keys().next().value;
+    pagarmeAccountByIdempotencyKey.delete(oldestKey);
+  }
+  return account;
+}
+
+function getConfiguredPagarmeAccounts() {
+  return Object.entries(PAGARME_SECRET_KEYS)
+    .filter(([, secretKey]) => Boolean(secretKey))
+    .map(([account]) => account);
+}
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -972,6 +1027,7 @@ function buildBoletoPayload({
   idempotencyKey,
   items,
   profile,
+  account,
   address,
   profileIndex,
   addressSource,
@@ -994,6 +1050,7 @@ function buildBoletoPayload({
     ],
     metadata: {
       source: 'pedido-chat-checkout',
+      pagarme_account: account,
       billing_profile_index: fallbackUsed ? 'default' : String(profileIndex + 1),
       billing_address_source: addressSource,
       billing_idempotency_retry: String(isRetry),
@@ -1002,9 +1059,17 @@ function buildBoletoPayload({
   };
 }
 
-function pagarmeRequestConfig(idempotencyKey) {
+function pagarmeRequestConfig(idempotencyKey, account) {
+  const secretKey = PAGARME_SECRET_KEYS[account];
+  if (!secretKey) {
+    const error = new Error(`A conta Pagar.me ${account} não está configurada.`);
+    error.code = 'PAGARME_ACCOUNT_NOT_CONFIGURED';
+    error.account = account;
+    throw error;
+  }
+
   return {
-    auth: { username: PAGARME_SECRET_KEY, password: '' },
+    auth: { username: secretKey, password: '' },
     headers: {
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey
@@ -1031,12 +1096,12 @@ function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-async function createBoletoSafely(payload, idempotencyKey, amountInCents) {
+async function createBoletoSafely(payload, idempotencyKey, amountInCents, account) {
   const execute = async () => {
     const response = await axios.post(
       `${PAGARME_API_URL}/orders`,
       payload,
-      pagarmeRequestConfig(idempotencyKey)
+      pagarmeRequestConfig(idempotencyKey, account)
     );
     const boleto = extractBoletoFromOrder(response.data, amountInCents);
     if (!boleto) {
@@ -1050,9 +1115,15 @@ async function createBoletoSafely(payload, idempotencyKey, amountInCents) {
   try {
     return await execute();
   } catch (error) {
+    error.account = error.account || account;
     if (!isAmbiguousPagarmeFailure(error)) throw error;
     await wait(350);
-    return execute();
+    try {
+      return await execute();
+    } catch (retryError) {
+      retryError.account = retryError.account || account;
+      throw retryError;
+    }
   }
 }
 
@@ -1060,7 +1131,7 @@ function extractPagarmeError(error) {
   const status = Number(error?.response?.status) || 0;
   const data = error?.response?.data;
   if (status === 401 || status === 403) {
-    return 'A Pagar.me recusou a autenticação. Confira a variável PAGARME_SECRET_KEY no Render.';
+    return `A Pagar.me recusou a autenticação. Confira a variável PAGARME_SECRET_KEY_${error?.account || 'X'} no Render.`;
   }
 
   const messages = [];
@@ -1121,10 +1192,16 @@ function limitBoletoRequests(req, res, next) {
 }
 
 app.get('/api/health', (_req, res) => {
+  const configuredAccounts = getConfiguredPagarmeAccounts();
+  const currentAccount = getPagarmeAccountForDate();
   res.status(200).json({
     status: 'ok',
     service: 'checkout-pagarme-boleto',
-    pagarmeConfigured: Boolean(PAGARME_SECRET_KEY),
+    pagarmeConfigured: configuredAccounts.length === 3,
+    pagarmeAccountsConfigured: configuredAccounts,
+    pagarmeCurrentAccount: currentAccount,
+    pagarmeTimeZone: PAGARME_TIME_ZONE,
+    pagarmeWeekendAccount: PAGARME_WEEKEND_ACCOUNT,
     billingProfiles: BILLING_COMPANY_PROFILES.length,
     billingRotation: 'sequential-memory',
     defaultAddressConfigured: validateAddress(DEFAULT_BILLING_ADDRESS).length === 0,
@@ -1139,7 +1216,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
-  if (!PAGARME_SECRET_KEY) {
+  if (getConfiguredPagarmeAccounts().length === 0) {
     return res.status(500).json({ error: 'O serviço de boleto ainda não está configurado.' });
   }
 
@@ -1176,12 +1253,21 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
     return res.status(400).json({ error: 'A chave de idempotência enviada é inválida.' });
   }
 
+  const pagarmeAccount = getPagarmeAccountForIdempotencyKey(idempotencyKey);
+  if (!PAGARME_SECRET_KEYS[pagarmeAccount]) {
+    console.error('Conta Pagar.me do dia não configurada:', { account: pagarmeAccount, timeZone: PAGARME_TIME_ZONE });
+    return res.status(500).json({
+      error: `A conta Pagar.me ${pagarmeAccount} ainda não está configurada para hoje.`
+    });
+  }
+
   try {
     return await withNextBillingCompany(idempotencyKey, async (billingCompany, profileIndex, isRetry) => {
       const primaryPayload = buildBoletoPayload({
         idempotencyKey,
         items,
         profile: billingCompany,
+        account: pagarmeAccount,
         address: addressResolution.address,
         profileIndex,
         addressSource: addressResolution.source,
@@ -1190,8 +1276,8 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
       });
 
       try {
-        const boleto = await createBoletoSafely(primaryPayload, idempotencyKey, amountInCents);
-        return res.status(201).json({ ...boleto, addressSource: addressResolution.source });
+        const boleto = await createBoletoSafely(primaryPayload, idempotencyKey, amountInCents, pagarmeAccount);
+        return res.status(201).json({ ...boleto, addressSource: addressResolution.source, pagarmeAccount });
       } catch (primaryError) {
         const providerStatus = Number(primaryError?.response?.status) || 0;
         console.error('Primeira tentativa de boleto não foi confirmada:', {
@@ -1207,28 +1293,34 @@ app.post('/api/boleto', limitBoletoRequests, async (req, res) => {
           idempotencyKey: defaultKey,
           items,
           profile: DEFAULT_BILLING_CUSTOMER,
+          account: pagarmeAccount,
           address: DEFAULT_BILLING_CUSTOMER.address,
           profileIndex: 0,
           addressSource: 'default-customer',
           isRetry: false,
           fallbackUsed: true
         });
-        const boleto = await createBoletoSafely(defaultPayload, defaultKey, amountInCents);
+        const boleto = await createBoletoSafely(defaultPayload, defaultKey, amountInCents, pagarmeAccount);
         console.warn('Boleto recuperado com o cliente empresarial padrão.', {
           primaryStatus: providerStatus,
           primaryCode: primaryError?.code || null
         });
-        return res.status(201).json({ ...boleto, addressSource: 'default' });
+        return res.status(201).json({ ...boleto, addressSource: 'default', pagarmeAccount });
       }
     });
   } catch (error) {
     const providerStatus = Number(error?.response?.status) || 0;
     console.error('Não foi possível confirmar um boleto na Pagar.me:', {
       status: providerStatus || null,
-      code: error?.code || null
+      code: error?.code || null,
+      account: error?.account || pagarmeAccount
     });
-    return res.status(502).json({
-      error: 'Não foi possível confirmar o boleto agora. Tente novamente em instantes.'
+    const statusCode = error?.code === 'PAGARME_ACCOUNT_NOT_CONFIGURED' ? 500 : 502;
+    error.account = error.account || pagarmeAccount;
+    return res.status(statusCode).json({
+      error: statusCode === 500
+        ? `A conta Pagar.me ${error.account} ainda não está configurada.`
+        : extractPagarmeError(error)
     });
   }
 });
@@ -1340,7 +1432,8 @@ app.get('/*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`Servidor unificado rodando na porta ${PORT}`);
-    console.log(`Pagar.me configurada: ${PAGARME_SECRET_KEY ? 'sim' : 'não'}`);
+    console.log(`Contas Pagar.me configuradas: ${getConfiguredPagarmeAccounts().join(', ') || 'nenhuma'}`);
+    console.log(`Roteamento Pagar.me: seg/ter X, qua/qui Y, sex Z, fim de semana ${PAGARME_WEEKEND_ACCOUNT} (${PAGARME_TIME_ZONE})`);
   });
 }
 
@@ -1359,6 +1452,9 @@ module.exports = {
     parseBillingCompanyList,
     resolveBillingAddress,
     parseBrazilianPhone,
-    parseShippingAddress
+    parseShippingAddress,
+    getPagarmeAccountForDate,
+    getPagarmeAccountForIdempotencyKey,
+    getConfiguredPagarmeAccounts
   }
 };
