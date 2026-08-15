@@ -558,112 +558,94 @@ html,body{
 }
 .input-el::placeholder{color:var(--text-3);}
 
-.attachment-btn{
-  width:32px;height:32px;border-radius:50%;border:none;
-  background:transparent;color:var(--text-3);cursor:pointer;
+.file-upload-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:transparent;color:var(--text-3);
+  border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;margin:2px 7px 2px -8px;
-  transition:all .2s ease;
+  margin-bottom:3px;flex-shrink:0;
+  transition:all .2s var(--spring);
 }
-.attachment-btn:hover{background:var(--brand-glow);color:var(--brand);}
-.attachment-btn:active{transform:scale(.92);}
-.attachment-input{display:none;}
-.attachment-preview{
-  width:100%;display:none;align-items:center;gap:10px;
-  padding:9px 10px;background:#F8FBFF;
-  border:1px solid var(--border-2);border-radius:14px;
-  box-shadow:0 2px 8px rgba(15,91,168,.06);
-  animation:msgIn .22s var(--ease);
-}
-.attachment-preview.on{display:flex;}
-.attachment-preview-thumb{
-  width:42px;height:42px;border-radius:10px;overflow:hidden;
-  background:var(--brand-glow);color:var(--brand);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.attachment-preview-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.attachment-preview-copy{min-width:0;flex:1;display:flex;flex-direction:column;line-height:1.25;}
-.attachment-preview-label{font-size:10px;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.45px;}
-.attachment-preview-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
-.attachment-preview-meta{font-size:10.5px;color:var(--text-3);margin-top:2px;}
-.attachment-remove{
-  width:28px;height:28px;border-radius:50%;border:none;
-  background:#fff;color:var(--text-3);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .2s ease;
-}
-.attachment-remove:hover{background:#FFF1F2;color:#E11D48;}
+.file-upload-btn:hover{color:var(--brand);background:var(--brand-lt);}
+.file-upload-btn:active{transform:scale(.9);}
+.file-upload-btn svg{pointer-events:none;}
 
+.bubble-attachment{margin-top:6px;border-radius:8px;overflow:hidden;}
+.bubble-attachment img{max-width:100%;max-height:200px;display:block;border-radius:8px;cursor:pointer;}
+.bubble-attachment-pdf{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.08);padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;}
+.bubble-attachment-pdf svg{flex-shrink:0;}
+
+#receiptFileInput{display:none;}
+
+/* ── RECEIPT MODAL: mesmo padrão visual do Pix, adaptado para boleto ── */
 .receipt-modal-overlay{
-  position:absolute;inset:0;z-index:1200;display:none;
-  align-items:center;justify-content:center;padding:18px;
-  background:rgba(7,20,36,.48);backdrop-filter:blur(6px);
+  position:absolute;inset:0;background:rgba(0,0,0,.55);
+  z-index:1050;display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(8px);
 }
 .receipt-modal-overlay.on{display:flex;}
 .receipt-modal{
-  width:100%;max-width:370px;max-height:calc(100dvh - 36px);overflow-y:auto;
-  position:relative;background:#fff;border-radius:26px;padding:22px;
-  box-shadow:0 18px 50px rgba(7,20,36,.2);
-  animation:cardIn .35s var(--spring);
+  width:100%;max-width:430px;background:#fff;
+  border-radius:24px 24px 0 0;padding:28px 24px 24px;
+  box-shadow:0 -12px 40px rgba(0,0,0,.18);
+  animation:slideUp .4s var(--spring);
+  text-align:center;position:relative;
 }
-.receipt-modal-close{
-  position:absolute;top:14px;right:14px;width:32px;height:32px;
-  border:none;border-radius:50%;background:var(--surface-2);color:var(--text-3);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
+.receipt-modal-icon{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brand-lt) 0%,#dbeafe 100%);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  box-shadow:0 4px 16px rgba(15,91,168,.15);
+}
+.receipt-modal-icon svg{color:var(--brand);width:30px;height:30px;}
+.receipt-modal-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.receipt-modal-desc{font-size:13px;color:var(--text-3);margin-bottom:22px;line-height:1.55;}
+.receipt-modal-btn{
+  width:100%;padding:15px;border-radius:14px;
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-mid) 100%);color:#fff;border:none;
+  font-weight:700;font-size:14.5px;cursor:pointer;
+  box-shadow:0 4px 18px rgba(15,91,168,.3);
+  transition:all .25s ease;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:.3px;
+}
+.receipt-modal-btn:hover{background:linear-gradient(135deg,var(--brand-mid) 0%,#2596d9 100%);transform:translateY(-1px);box-shadow:0 6px 22px rgba(15,91,168,.38);}
+.receipt-modal-btn:active{transform:scale(.97);}
+.receipt-modal-cancel{
+  width:100%;padding:12px;border-radius:12px;
+  background:transparent;color:var(--text-3);border:none;
+  font-weight:600;font-size:13px;cursor:pointer;
   transition:all .2s ease;
 }
-.receipt-modal-close:hover{background:var(--border-2);color:var(--text);}
-.receipt-modal-header{padding-right:34px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start;}
-.receipt-modal-icon{
-  width:46px;height:46px;border-radius:14px;flex-shrink:0;
+.receipt-modal-cancel:hover{background:var(--surface-2);color:var(--text-2);}
+.receipt-modal-formats{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--border-2);
+  display:flex;justify-content:center;gap:10px;
+}
+.receipt-format-tag{
+  font-size:10px;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.8px;
+  background:var(--surface-2);padding:4px 10px;border-radius:6px;
+}
+.receipt-modal-close{
+  position:absolute;top:14px;right:14px;
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surface-2);border:none;
   display:flex;align-items:center;justify-content:center;
-  color:var(--brand);background:linear-gradient(145deg,var(--brand-lt),var(--brand-glow));
+  cursor:pointer;transition:all .2s ease;color:var(--text-3);padding:0;
 }
-.receipt-modal-title{font-size:17px;font-weight:800;color:var(--text);line-height:1.25;margin:1px 0 4px;}
-.receipt-modal-subtitle{font-size:12px;color:var(--text-3);line-height:1.5;}
-.receipt-drop-zone{
-  width:100%;padding:20px 15px;border:1.5px dashed var(--brand-mid);
-  border-radius:18px;background:#F8FBFF;text-align:center;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  color:var(--text-2);transition:all .2s ease;outline:none;
+.receipt-modal-close:hover{background:var(--border-2);color:var(--text-2);transform:scale(1.05);}
+.receipt-modal-close:active{transform:scale(.95);}
+.receipt-modal-close svg{width:18px;height:18px;}
+.receipt-reminder-btn,.delivery-receipt-btn{
+  display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:9px 14px;
+  background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .2s ease;box-shadow:0 2px 8px rgba(15,91,168,.2);line-height:1;
 }
-.receipt-drop-zone:hover,.receipt-drop-zone:focus-visible,.receipt-drop-zone.dragging{
-  border-color:var(--brand);background:var(--brand-glow);box-shadow:0 0 0 3px rgba(15,91,168,.07);
-}
-.receipt-drop-zone-icon{
-  width:42px;height:42px;border-radius:13px;background:#fff;color:var(--brand);
-  display:flex;align-items:center;justify-content:center;margin-bottom:2px;
-  box-shadow:0 3px 10px rgba(15,91,168,.1);
-}
-.receipt-drop-zone strong{font-size:13px;color:var(--text);}
-.receipt-drop-zone span{font-size:11.5px;color:var(--text-3);line-height:1.4;}
-.receipt-select-action{
-  display:inline-flex;margin-top:4px;padding:7px 12px;border-radius:10px;
-  background:#fff;color:var(--brand) !important;font-size:11px !important;font-weight:800;
-  box-shadow:0 2px 8px rgba(15,91,168,.09);
-}
-.receipt-modal .attachment-preview{margin-top:12px;padding:10px;}
-.receipt-modal .attachment-preview-thumb{width:46px;height:46px;border-radius:11px;}
-.receipt-modal-error{
-  display:none;margin-top:10px;padding:9px 10px;border-radius:10px;
-  background:#FFF1F2;color:#BE123C;font-size:11px;font-weight:650;line-height:1.4;
-}
-.receipt-modal-error.on{display:block;}
-.receipt-modal-security{
-  display:flex;align-items:flex-start;gap:8px;margin-top:13px;padding:10px;
-  border-radius:12px;background:#F4FBF8;color:#047857;font-size:10.5px;line-height:1.45;
-}
-.receipt-modal-security svg{flex-shrink:0;margin-top:1px;}
-.receipt-modal-actions{display:grid;grid-template-columns:.8fr 1.2fr;gap:9px;margin-top:16px;}
-.receipt-modal-cancel,.receipt-modal-submit{
-  min-height:42px;border-radius:13px;font-family:inherit;font-size:12px;font-weight:800;
-  cursor:pointer;transition:all .2s ease;
-}
-.receipt-modal-cancel{border:1px solid var(--border-2);background:#fff;color:var(--text-2);}
-.receipt-modal-cancel:hover{background:var(--surface-2);}
-.receipt-modal-submit{border:none;background:var(--brand);color:#fff;box-shadow:0 4px 14px rgba(15,91,168,.22);}
-.receipt-modal-submit:hover:not(:disabled){background:var(--brand-dk);}
-.receipt-modal-submit:disabled{background:var(--border);color:var(--text-3);box-shadow:none;cursor:default;}
+.receipt-reminder-btn:hover,.delivery-receipt-btn:hover{background:var(--brand-mid);transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,91,168,.28);}
+.receipt-reminder-btn:active,.delivery-receipt-btn:active{transform:scale(.96);}
+.receipt-reminder-btn svg,.delivery-receipt-btn svg{flex-shrink:0;}
 
 .receipt-bubble{width:min(260px,72vw);padding:9px !important;}
 .receipt-heading{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;margin:1px 2px 8px;color:rgba(255,255,255,.82);}
@@ -1167,62 +1149,38 @@ html,body{
 
   <!-- FOOTER -->
   <footer class="footer">
+    <input type="file" id="receiptFileInput" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,application/pdf" multiple>
     <div class="input-wrap" id="inputWrap">
-      <button type="button" class="attachment-btn" id="attachmentBtn" aria-label="Anexar comprovante" title="Anexar comprovante">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-      </button>
       <textarea class="input-el" id="msgInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
     </div>
+    <button type="button" class="file-upload-btn" id="fileUploadBtn" aria-label="Enviar comprovante do boleto" title="Enviar comprovante do boleto">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
     <button class="send-btn" id="sendBtn" disabled aria-label="Enviar">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </footer>
 
-  <!-- RECEIPT MODAL -->
+  <!-- RECEIPT MODAL: mesmo componente do Pix, adaptado para boleto -->
   <div class="receipt-modal-overlay" id="receiptModalOverlay" role="dialog" aria-modal="true" aria-labelledby="receiptModalTitle">
     <div class="receipt-modal">
-      <button type="button" class="receipt-modal-close" id="receiptModalClose" aria-label="Fechar envio de comprovante">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <div class="modal-handle"></div>
+      <button type="button" class="receipt-modal-close" id="receiptModalCloseBtn" aria-label="Fechar envio do comprovante do boleto">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <div class="receipt-modal-header">
-        <div class="receipt-modal-icon">
-          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 7V5a3 3 0 0 0-6 0v2"/><polyline points="13 14 15 16 19 12"/></svg>
-        </div>
-        <div>
-          <h2 class="receipt-modal-title" id="receiptModalTitle">Enviar comprovante</h2>
-          <p class="receipt-modal-subtitle">Anexe o comprovante do pagamento para aprovação do seu pedido.</p>
-        </div>
+      <div class="receipt-modal-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
-      <div class="receipt-drop-zone" id="receiptDropZone" role="button" tabindex="0" aria-label="Selecionar arquivo do comprovante">
-        <div class="receipt-drop-zone-icon">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        </div>
-        <strong>Comprovante de Pagamento</strong>
-        <span>Envie o comprovante de pagamento do Boleto.</span>
-        <span class="receipt-select-action">Enviar comprovante</span>
-        <input class="attachment-input" id="receiptInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf">
-      </div>
-      <div class="attachment-preview" id="attachmentPreview" aria-live="polite">
-        <div class="attachment-preview-thumb" id="attachmentPreviewThumb">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-        </div>
-        <div class="attachment-preview-copy">
-          <span class="attachment-preview-label">Comprovante selecionado</span>
-          <strong class="attachment-preview-name" id="attachmentPreviewName"></strong>
-          <span class="attachment-preview-meta" id="attachmentPreviewMeta"></span>
-        </div>
-        <button type="button" class="attachment-remove" id="attachmentRemoveBtn" aria-label="Remover comprovante">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="receipt-modal-error" id="receiptModalError" role="alert"></div>
-      <div class="receipt-modal-security">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>Após o envio do comprovante seu pedido será aprovado imediatamente.</span>
-      </div>
-      <div class="receipt-modal-actions">
-        <button type="button" class="receipt-modal-cancel" id="receiptModalCancel">Cancelar</button>
-        <button type="button" class="receipt-modal-submit" id="receiptModalSubmit" disabled>Enviar comprovante</button>
+      <div class="receipt-modal-title" id="receiptModalTitle">Enviar comprovante do boleto</div>
+      <div class="receipt-modal-desc">Envie o comprovante de pagamento do boleto. Após o envio, ele será encaminhado para conferência do pedido.</div>
+      <button type="button" class="receipt-modal-btn" id="receiptModalSelectBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Selecionar comprovante do boleto
+      </button>
+      <button type="button" class="receipt-modal-cancel" id="receiptModalCancelBtn">Cancelar</button>
+      <div class="receipt-modal-formats">
+        <span class="receipt-format-tag">BOLETO</span>
+        <span class="receipt-format-tag">DISKGÁS</span>
       </div>
     </div>
   </div>
@@ -1294,21 +1252,17 @@ const STATE_STORAGE_KEY = 'diskgas_chat_state';
 const inputEl        = document.getElementById('msgInput');
 const inputWrapEl    = document.getElementById('inputWrap');
 const sendBtnEl      = document.getElementById('sendBtn');
-const attachmentBtnEl = document.getElementById('attachmentBtn');
-const receiptInputEl = document.getElementById('receiptInput');
-const attachmentPreviewEl = document.getElementById('attachmentPreview');
-const attachmentPreviewThumbEl = document.getElementById('attachmentPreviewThumb');
-const attachmentPreviewNameEl = document.getElementById('attachmentPreviewName');
-const attachmentPreviewMetaEl = document.getElementById('attachmentPreviewMeta');
-const attachmentRemoveBtnEl = document.getElementById('attachmentRemoveBtn');
-const receiptModalOverlayEl = document.getElementById('receiptModalOverlay');
-const receiptModalCloseEl = document.getElementById('receiptModalClose');
-const receiptModalCancelEl = document.getElementById('receiptModalCancel');
-const receiptModalSubmitEl = document.getElementById('receiptModalSubmit');
-const receiptDropZoneEl = document.getElementById('receiptDropZone');
-const receiptModalErrorEl = document.getElementById('receiptModalError');
-let pendingReceipt = null;
-  updateSendButtonState();
+const receiptFileInput = document.getElementById('receiptFileInput');
+const fileUploadBtn = document.getElementById('fileUploadBtn');
+const receiptModalOverlay = document.getElementById('receiptModalOverlay');
+const receiptModalCloseBtn = document.getElementById('receiptModalCloseBtn');
+const receiptModalSelectBtn = document.getElementById('receiptModalSelectBtn');
+const receiptModalCancelBtn = document.getElementById('receiptModalCancelBtn');
+
+function updateSendButtonState() {
+  sendBtnEl.disabled = !inputEl.value.trim();
+}
+updateSendButtonState();
 const typingEl       = document.getElementById('typingRow');
 const fabEl          = document.getElementById('scrollFab');
 const fabBadge       = document.getElementById('fabBadge');
@@ -1623,184 +1577,162 @@ inputEl.addEventListener('focus', () => {
   setTimeout(() => { msgsEl.scrollTop = msgsEl.scrollHeight; }, 350);
 });
 
-const RECEIPT_MAX_SIZE = 5 * 1024 * 1024;
-const RECEIPT_ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
-const receiptPreviewDefaultIcon = attachmentPreviewThumbEl.innerHTML;
-
-function formatReceiptSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function escapeReceiptText(value) {
-  return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-}
-
-function updateSendButtonState() {
-  sendBtnEl.disabled = !inputEl.value.trim() && !pendingReceipt;
-}
-
-function setReceiptModalError(message='') {
-  receiptModalErrorEl.textContent = message;
-  receiptModalErrorEl.classList.toggle('on', Boolean(message));
-}
-
-function clearPendingReceipt() {
-  pendingReceipt = null;
-  receiptInputEl.value = '';
-  attachmentPreviewEl.classList.remove('on');
-  attachmentPreviewNameEl.textContent = '';
-  attachmentPreviewMetaEl.textContent = '';
-  attachmentPreviewThumbEl.innerHTML = receiptPreviewDefaultIcon;
-  receiptModalSubmitEl.disabled = true;
-  receiptDropZoneEl.classList.remove('dragging');
-  setReceiptModalError();
-  updateSendButtonState();
-}
-
-function openReceiptModal() {
-  clearPendingReceipt();
-  receiptModalOverlayEl.classList.add('on');
-  setTimeout(() => receiptDropZoneEl.focus(), 80);
-}
-
-function closeReceiptModal() {
-  receiptModalOverlayEl.classList.remove('on');
-  clearPendingReceipt();
-  inputEl.focus();
-}
-
-function readReceiptFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error || new Error('Falha ao ler o comprovante.'));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function prepareReceipt(file) {
-  if (!file) return;
-  clearPendingReceipt();
-  if (!RECEIPT_ACCEPTED_TYPES.includes(file.type)) {
-    setReceiptModalError('Formato não permitido. Envie o comprovante em PNG, JPG, WEBP ou PDF.');
-    return;
-  }
-  if (file.size > RECEIPT_MAX_SIZE) {
-    setReceiptModalError('O comprovante deve ter no máximo 5 MB.');
-    return;
-  }
-
-  try {
-    const dataUrl = await readReceiptFile(file);
-    pendingReceipt = { name: file.name, type: file.type, size: file.size, dataUrl };
-    attachmentPreviewNameEl.textContent = file.name;
-    attachmentPreviewMetaEl.textContent = `${file.type === 'application/pdf' ? 'Documento PDF' : 'Imagem'} · ${formatReceiptSize(file.size)}`;
-    attachmentPreviewThumbEl.innerHTML = file.type.startsWith('image/')
-      ? `<img src="${dataUrl}" alt="Pré-visualização do comprovante">`
-      : receiptPreviewDefaultIcon;
-    attachmentPreviewEl.classList.add('on');
-    receiptModalSubmitEl.disabled = false;
-    updateSendButtonState();
-  } catch (error) {
-    clearPendingReceipt();
-    setReceiptModalError('Não foi possível abrir este comprovante. Selecione outro arquivo.');
-  }
-}
-
-function addReceiptMsg(receipt, caption='') {
-  const isGrouped = lastSender === 'user';
-  const row = document.createElement('div');
-  row.className = `row user${isGrouped ? ' grouped' : ''}`;
-  const safeName = escapeReceiptText(receipt.name);
-  const safeCaption = escapeReceiptText(caption).replace(/\n/g,'<br>');
-  const fileSize = formatReceiptSize(receipt.size);
-  const mediaHtml = receipt.type.startsWith('image/')
-    ? `<a class="receipt-media" data-receipt-name="${safeName}" href="${receipt.dataUrl}" download="${safeName}" title="Abrir comprovante"><img class="receipt-image" src="${receipt.dataUrl}" alt="Comprovante de pagamento"></a>`
-    : `<a class="receipt-media" data-receipt-name="${safeName}" href="${receipt.dataUrl}" download="${safeName}" title="Abrir comprovante"><div class="receipt-document"><div class="receipt-document-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div><div class="receipt-document-copy"><span class="receipt-name">${safeName}</span><span class="receipt-size">PDF · ${fileSize}</span></div></div></a>`;
-  const readHtml = '<span class="b-read sending">✓</span>';
-
-  row.innerHTML = `<div class="bubble u receipt-bubble"><div class="receipt-heading"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Comprovante de pagamento</div>${mediaHtml}${safeCaption ? `<div class="receipt-caption">${safeCaption}</div>` : ''}<div class="b-meta"><span class="b-time">${ts()}</span>${readHtml}</div></div>`;
-  const bubble = row.querySelector('.bubble');
-  const originalText = `Comprovante de pagamento anexado: ${receipt.name}${caption ? `. Mensagem: ${caption}` : ''}`;
-  bubble.dataset.originalText = originalText;
-  msgsEl.appendChild(row);
-  lastSender = 'user';
-
-  const readEl = row.querySelector('.b-read');
-  const onReadPromise = new Promise(resolve => {
-    setTimeout(() => {
-      readEl.textContent = '✓✓';
-      readEl.className = 'b-read sent';
-      setTimeout(() => { readEl.className = 'b-read read'; resolve(); }, 1300);
-    }, 700);
-  });
-
-  scrollDown();
-  saveChatHistory();
-  socket.emit('send_message', {
-    userId,
-    text: originalText,
-    sender: 'Cliente',
-    isAuto: false,
-    attachment: {
-      kind: 'payment_receipt',
-      name: receipt.name,
-      type: receipt.type,
-      size: receipt.size,
-      data: receipt.dataUrl
-    }
-  });
-  return { row, onReadPromise };
-}
-
-attachmentBtnEl.addEventListener('click', openReceiptModal);
-receiptDropZoneEl.addEventListener('click', event => {
-  if (event.target !== receiptInputEl) receiptInputEl.click();
-});
-receiptDropZoneEl.addEventListener('keydown', event => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    receiptInputEl.click();
-  }
-});
-receiptDropZoneEl.addEventListener('dragover', event => {
-  event.preventDefault();
-  receiptDropZoneEl.classList.add('dragging');
-});
-receiptDropZoneEl.addEventListener('dragleave', () => receiptDropZoneEl.classList.remove('dragging'));
-receiptDropZoneEl.addEventListener('drop', event => {
-  event.preventDefault();
-  receiptDropZoneEl.classList.remove('dragging');
-  prepareReceipt(event.dataTransfer.files[0]);
-});
-receiptInputEl.addEventListener('change', () => prepareReceipt(receiptInputEl.files[0]));
-attachmentRemoveBtnEl.addEventListener('click', clearPendingReceipt);
-receiptModalCloseEl.addEventListener('click', closeReceiptModal);
-receiptModalCancelEl.addEventListener('click', closeReceiptModal);
-receiptModalOverlayEl.addEventListener('click', event => {
-  if (event.target === receiptModalOverlayEl) closeReceiptModal();
-});
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && receiptModalOverlayEl.classList.contains('on')) closeReceiptModal();
-});
-receiptModalSubmitEl.addEventListener('click', () => {
-  if (!pendingReceipt) return;
-  receiptModalSubmitEl.disabled = true;
-  receiptModalOverlayEl.classList.remove('on');
-  doSend();
-});
-
 inputEl.addEventListener('input', () => {
   inputEl.style.height='auto';
   inputEl.style.height=Math.min(inputEl.scrollHeight,88)+'px';
   updateSendButtonState();
 });
 inputEl.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();} });
-
-sendBtnEl.addEventListener('mousedown', e => { if (inputEl.value.trim() || pendingReceipt) e.preventDefault(); });
+sendBtnEl.addEventListener('mousedown', e => { if (inputEl.value.trim()) e.preventDefault(); });
 sendBtnEl.addEventListener('click', () => doSend());
+
+// ── FILE UPLOAD: padrão Pix adaptado para comprovante de boleto ──
+fileUploadBtn.addEventListener('click', (event) => {
+  event.preventDefault();
+  receiptModalOverlay.classList.add('on');
+});
+
+receiptModalSelectBtn.addEventListener('click', (event) => {
+  event.preventDefault();
+  receiptModalOverlay.classList.remove('on');
+  receiptFileInput.value = '';
+  receiptFileInput.click();
+});
+
+receiptModalCloseBtn.addEventListener('click', () => {
+  receiptModalOverlay.classList.remove('on');
+});
+
+receiptModalCancelBtn.addEventListener('click', () => {
+  receiptModalOverlay.classList.remove('on');
+});
+
+receiptModalOverlay.addEventListener('click', (event) => {
+  if (event.target === receiptModalOverlay) {
+    receiptModalOverlay.classList.remove('on');
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && receiptModalOverlay.classList.contains('on')) {
+    receiptModalOverlay.classList.remove('on');
+  }
+});
+
+receiptFileInput.addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    addSys('Arquivo muito grande. Tamanho máximo: 10 MB.', 'gold');
+    receiptFileInput.value = '';
+    return;
+  }
+
+  receiptFileInput.value = '';
+  const fileExt = file.name.split('.').pop().toLowerCase();
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+  let attachmentHtml = '';
+
+  const row = document.createElement('div');
+  row.className = 'row user';
+
+  if (isImage) {
+    const reader = new FileReader();
+    reader.onload = (eventRead) => {
+      const dataUrl = eventRead.target.result;
+      attachmentHtml = `<div class="bubble-attachment"><img src="${dataUrl}" alt="Comprovante do boleto" onclick="window.open('${dataUrl}','_blank')"></div>`;
+      const bubble = row.querySelector('.bubble');
+      if (bubble) bubble.insertAdjacentHTML('beforeend', attachmentHtml);
+      scrollDown();
+    };
+    reader.readAsDataURL(file);
+  } else {
+    attachmentHtml = `<div class="bubble-attachment bubble-attachment-pdf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>PDF · ${file.name}</span></div>`;
+  }
+
+  row.innerHTML = `<div class="bubble u">📎 Comprovante do boleto enviado<div class="b-meta"><span class="b-time">${ts()}</span><span class="b-read sending">✓</span></div>${attachmentHtml}</div>`;
+  msgsEl.appendChild(row);
+  lastSender = 'user';
+  scrollDown();
+
+  const readEl = row.querySelector('.b-read');
+  setTimeout(() => { readEl.textContent = '✓✓'; readEl.className = 'b-read sent'; }, 700);
+  setTimeout(() => { readEl.className = 'b-read read'; }, 2000);
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('userId', userId);
+  formData.append('sender', 'Cliente');
+
+  console.log('Enviando comprovante do boleto para servidor:', file.name, file.size, 'bytes');
+
+  let uploaded = false;
+  let serverAttachment = null;
+  try {
+    const response = await fetch('/api/upload-receipt', { method: 'POST', body: formData });
+    const data = await response.json();
+    console.log('Resposta do servidor:', data);
+    if (data.success && data.attachment) {
+      uploaded = true;
+      serverAttachment = data.attachment;
+      row.dataset.attachmentUrl = data.attachment.url || '';
+      row.dataset.attachmentFilename = data.attachment.filename || file.name;
+      row.dataset.attachmentMimetype = data.attachment.mimetype || file.type;
+      row.dataset.attachmentServerFilename = data.attachment.serverFilename || '';
+    }
+  } catch (error) {
+    console.error('Erro no upload do comprovante do boleto:', error);
+  }
+
+  const attachmentToSend = serverAttachment || {
+    url: '',
+    filename: file.name,
+    mimetype: file.type,
+    size: file.size,
+    serverFilename: ''
+  };
+
+  socket.emit('send_message', {
+    userId,
+    text: `📎 Comprovante do boleto enviado: ${file.name}`,
+    sender: 'Cliente',
+    isAuto: false,
+    attachment: attachmentToSend
+  });
+  console.log('Comprovante do boleto emitido via socket para admin');
+
+  saveChatHistory();
+
+  if (uploaded) {
+    if (!window._receiptTimerStarted) {
+      window._receiptTimerStarted = true;
+      localStorage.setItem('dg_receipt_timer', Date.now().toString());
+    }
+
+    if (!window._receiptDeliveryMsgSent) {
+      window._receiptDeliveryMsgSent = true;
+      setTimeout(async () => {
+        await agentSay('Comprovante do boleto recebido! O pagamento será conferido e o pedido seguirá para preparação. 😃', true, true);
+        setTimeout(() => {
+          const lastBubble = msgsEl.querySelector('.row.agent:last-child .bubble.a');
+          if (lastBubble && !lastBubble.querySelector('.delivery-receipt-btn')) {
+            const button = document.createElement('button');
+            button.className = 'delivery-receipt-btn';
+            button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Enviar comprovante do boleto';
+            button.onclick = () => receiptModalOverlay.classList.add('on');
+            const metaEl = lastBubble.querySelector('.b-meta');
+            if (metaEl && metaEl.parentElement) metaEl.parentElement.insertBefore(button, metaEl);
+            else lastBubble.appendChild(button);
+          }
+          saveChatHistory();
+        }, 300);
+      }, 300);
+    }
+  } else {
+    addSys('O comprovante foi exibido no chat, mas não conseguimos confirmar o upload ao servidor. Tente enviar novamente.', 'gold');
+  }
+});
 
 // ── MESSAGES ─────────────────────────────────────────
 function addMsg(text, type, newGroup=false, saveToStorage=true, emitToSocket=true) {
@@ -2440,26 +2372,12 @@ PASSO ATUAL: ${currentFlowStep}
 // ── FUNÇÃO CORRIGIDA doSend() ──────────────────────────────────
 async function doSend() {
   const text = inputEl.value.trim();
-  const receiptToSend = pendingReceipt;
-  if (!text && !receiptToSend) return;
+  if (!text) return;
   sendBtnEl.disabled = true;
-  if (!receiptToSend && text.toLowerCase() === 'emailjs') { sendTranscript(); inputEl.value = ''; return; }
+  if (text.toLowerCase() === 'emailjs') { sendTranscript(); inputEl.value = ''; updateSendButtonState(); return; }
   const originalText = text;
   inputEl.value=''; inputEl.style.height='auto'; inputEl.blur();
 
-  if (receiptToSend) {
-    const { onReadPromise } = addReceiptMsg(receiptToSend, originalText);
-    clearPendingReceipt();
-    await onReadPromise;
-    setTyping(true);
-    await pause(1200);
-    setTyping(false);
-    await agentSay('Comprovante recebido! Vou encaminhá-lo para conferência. Assim que o pagamento for identificado, o pedido seguirá para preparação. 😄', true, true);
-    saveChatHistory();
-    updateSendButtonState();
-    return;
-  }
-  
   const { row } = addMsg(originalText, 'user');
   // Captura o elemento da bolha de mensagem criada imediatamente
   const currentBubble = row.querySelector('.bubble');
@@ -2632,11 +2550,7 @@ function lockBackButton() {
     window._boletoCopyTimer = null; window._boletoPaymentTimer = null; window._boletoCopyReminderSent = false; window._boletoPaymentReminderSent = false;
     lastSender = state.lastSender; window._currentFlowStep = state.flowStep || 0; window._paymentConfirmed = state.paymentConfirmed || false; window._contactMsgSent = state.contactMsgSent || false; window._boletoCopyClicked = state.boletoCopyClicked || false; window._boletoCopyReminderSent = state.boletoCopyReminderSent || false; window._boletoPaymentReminderSent = state.boletoPaymentReminderSent || false;
     msgsEl.innerHTML = savedHTML;
-    msgsEl.querySelectorAll('.pix-card').forEach(card => card.remove());
-    if (!window._currentBoletoLine && state.pixCode && window._currentFlowStep >= 7 && window._currentFlowStep <= 9) {
-      msgsEl.querySelectorAll('.payment-status-card').forEach(card => card.remove());
-      window._currentFlowStep = 6;
-    }
+    
     msgsEl.querySelectorAll('#boletoCopyBtn').forEach(button => {
       const card = button.closest('.boleto-card');
       if (card && window._currentBoletoLine) bindBoletoCopyButton(card, window._currentBoletoLine);
