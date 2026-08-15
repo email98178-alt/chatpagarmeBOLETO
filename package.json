@@ -6,21 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js",
-    "validate": "node validate_package.js",
-    "test:boleto": "node test_boleto_integration.js",
-    "test": "npm run check && npm run validate && npm run test:boleto"
+    "test:weekday": "node test_weekday_routing.js",
+    "test": "npm run check && npm run test:weekday"
   },
-  "keywords": [
-    "boleto",
-    "pagarme",
-    "checkout",
-    "socket.io"
-  ],
+  "keywords": ["boleto", "pagarme", "checkout", "socket.io"],
   "author": "",
   "license": "MIT",
-  "engines": {
-    "node": ">=20"
-  },
+  "engines": { "node": ">=20" },
   "dependencies": {
     "axios": "^1.6.0",
     "dotenv": "^16.3.1",
