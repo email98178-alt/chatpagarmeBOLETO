@@ -1769,7 +1769,18 @@ function addMsg(text, type, newGroup=false, saveToStorage=true, emitToSocket=tru
   return { row, onReadPromise };
 }
 
+function escapeReceiptText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[character]));
+}
+
 function saveChatHistory() {
+
   const historySnapshot = msgsEl.cloneNode(true);
   historySnapshot.querySelectorAll('.receipt-media').forEach(media => {
     const receiptName = escapeReceiptText(media.dataset.receiptName || 'Comprovante de pagamento');
