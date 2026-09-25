@@ -2040,8 +2040,14 @@ function renderQuoteCard(reply) {
   if (markerIndex < 0) return false;
   let data;
   try {
-    const raw = reply.slice(markerIndex + marker.length).trim();
-    data = JSON.parse(raw);
+    const raw = reply.slice(markerIndex + marker.length)
+      .replace(/```(?:json)?/gi, '')
+      .replace(/```/g, '')
+      .trim();
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start < 0 || end <= start) return false;
+    data = JSON.parse(raw.slice(start, end + 1));
   } catch (error) {
     return false;
   }
