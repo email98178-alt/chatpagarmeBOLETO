@@ -2035,22 +2035,37 @@ ETAPA ATUAL: ${currentFlowStep}
 }
 
 function renderQuoteCard(reply) {
-  const marker = 'ORCAMENTO_CARD:';
-  const markerIndex = reply.indexOf(marker);
-  if (markerIndex < 0) return false;
-  let data;
-  try {
-    const raw = reply.slice(markerIndex + marker.length)
-      .replace(/```(?:json)?/gi, '')
-      .replace(/```/g, '')
-      .trim();
-    const start = raw.indexOf('{');
-    const end = raw.lastIndexOf('}');
-    if (start < 0 || end <= start) return false;
-    data = JSON.parse(raw.slice(start, end + 1));
-  } catch (error) {
-    return false;
+  const text = String(reply || '').trim();
+  const markerMatch = text.match(/OR[CÇ]AMENTO[_\s-]*CARD\s*:/i);
+  const hasQuoteWords = /(ve[ií]culo|modelo)/i.test(text) && /pe[cç]a/i.test(text) && /R\$|pre[cç]o|valor/i.test(text);
+  if (!markerMatch && !hasQuoteWords) return false;
+
+  let data = null;
+  const source = markerMatch ? text.slice(markerMatch.index + markerMatch[0].length) : text;
+  const cleaned = source.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+
+  // Primeiro tenta JSON válido.
+  const startObject = cleaned.indexOf('{');
+  const endObject = cleaned.lastIndexOf('}');
+  if (startObject >= 0 && endObject > startObject) {
+    try { data = JSON.parse(cleaned.slice(startObject, endObject + 1)); } catch (error) {}
   }
+
+  // Fallback para a resposta de uma linha quando a IA usou campos não-JSON.
+  if (!data) {
+    const value = (keys) => {
+      const pattern = new RegExp('(?:' + keys.join('|') + ')\\s*[:=]\\s*["\\\']?([^|\\n,}]+)', 'i');
+      const match = cleaned.match(pattern);
+      return match ? match[1].replace(/["\\\']+$/g, '').trim() : '';
+    };
+    data = {
+      vehicle: value(['vehicle', 'veículo', 'veiculo', 'modelo']),
+      part: value(['part', 'peça', 'peca', 'produto']),
+      price: value(['price', 'preço', 'preco', 'valor']),
+      note: value(['note', 'observação', 'observacao', 'detalhe'])
+    };
+  }
+
   if (!data || !data.vehicle || !data.part || !data.price) return false;
 
   const card = document.createElement('div');
