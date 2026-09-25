@@ -2042,15 +2042,34 @@ function addProfessionalStatusCard() {
   updateModal();
   const savedHTML = loadChatHistory();
   const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+
   if (savedHTML && savedState) {
     msgsEl.innerHTML = savedHTML;
     const state = JSON.parse(savedState);
     lastSender = state.lastSender || null;
     window._currentFlowStep = state.flowStep || 1;
     scrollDown(true);
-  } else {
-    await runConversation();
+    return;
   }
+
+  const { onReadPromise } = addMsg('Olá! Gostaria de solicitar uma peça Hyundai.', 'user');
+  await pause(500);
+  const connSys = addSys('Conexão criptografada estabelecida', 'secure');
+  await pause(700);
+  const spinner = addSpinner('Aguarde um momento...');
+  const searchSys = addSys('Buscando consultora disponível...', 'brand');
+  await pause(1600);
+
+  spinner.remove();
+  connSys.parentElement.remove();
+  searchSys.textContent = '';
+  searchSys.className = 'ok';
+  searchSys.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Fe conectada';
+
+  await pause(500);
+  showIntroCard();
+  await onReadPromise;
+  await runConversation();
 })();
 </script>
 </body>
