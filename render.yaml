@@ -3,7 +3,7 @@ services:
     name: checkout-pagarme-boleto
     runtime: node
     plan: free
-    buildCommand: npm ci
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -29,3 +29,4 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-3.5-turbo
+
