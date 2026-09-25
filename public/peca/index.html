@@ -2123,7 +2123,7 @@ function renderQuoteFromConversation(userText, aiReply) {
 
   let part = text.slice(year.index + year[0].length)
     .replace(/^[\s|,:;–—-]+/, '').split('|')[0].trim();
-  if (!part || /^(oi|olá|ola|sim|não|nao)$/i.test(part)) part = 'Peça Hyundai solicitada';
+  if (!part || /^(oi|olá|ola|sim|não|nao)$/i.test(part)) return false;
 
   const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
   const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor a confirmar';
@@ -2132,6 +2132,19 @@ function renderQuoteFromConversation(userText, aiReply) {
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
   return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part, price, note })}`);
+}
+
+function updateQuoteCardFromReply(reply) {
+  const card = document.querySelector('.quote-card');
+  if (!card) return;
+  const priceMatch = String(reply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
+  if (priceMatch) {
+    const priceEl = card.querySelector('.quote-price');
+    if (priceEl) priceEl.textContent = priceMatch[0].replace(/\s+/g, ' ');
+    const noteEl = card.querySelector('.quote-note');
+    if (noteEl) noteEl.textContent = 'Orçamento inicial preparado para o veículo informado.';
+    saveChatHistory();
+  }
 }
 
 // ── FUNÇÃO CORRIGIDA doSend() ──────────────────────────────────
@@ -2143,12 +2156,16 @@ async function doSend() {
   const { row } = addMsg(text, 'user');
   const bubble = row.querySelector('.bubble');
   if (bubble) bubble.dataset.originalText = text;
+  const quoteConversation = getUserConversationText();
+  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+  const cardCreatedBeforeAI = canCreateInitialQuote && renderQuoteFromConversation(text, '');
+
   setTyping(true);
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
-  const quoteConversation = getUserConversationText();
-  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
-  if (!(canCreateInitialQuote && renderQuoteFromConversation(text, reply)) && !renderQuoteCard(reply)) {
+  if (cardCreatedBeforeAI) {
+    updateQuoteCardFromReply(reply);
+  } else if (!renderQuoteCard(reply)) {
     await agentSay(reply, true, true);
   }
   saveChatHistory();
