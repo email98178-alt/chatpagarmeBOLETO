@@ -2123,9 +2123,11 @@ function renderQuoteCard(reply) {
 
   if (!data || !data.vehicle || !data.part || !data.price) return false;
   data.items = Array.isArray(data.items) && data.items.length ? data.items : [{ name: professionalizeProductName(data.part), qty: 1 }];
-  data.items = data.items.map(item => ({ ...item, name: professionalizeProductName(item.name) }));
+  data.items = data.items.map((item, index) => ({ ...item, name: professionalizeProductName(item.name), price: item.price || (Array.isArray(data.prices) ? data.prices[index] : '') || (data.items.length === 1 ? data.price : '') }));
   data.part = data.items[0].name;
   window._quoteItems = data.items;
+  const numericPrices = data.items.map(item => { const match = String(item.price || '').match(/R\$\s*([\d.]+)(?:,([\d]{2}))?/i); return match ? Number(match[1].replace(/\./g, '') + '.' + (match[2] || '00')) : 0; }).filter(Boolean);
+  const totalPrice = numericPrices.length ? `R$ ${numericPrices.reduce((sum, value) => sum + value, 0).toFixed(2).replace('.', ',')}` : (data.price || 'Valor sob consulta');
   window._quoteCardShown = true;
 
   const card = document.createElement('div');
@@ -2141,7 +2143,7 @@ function renderQuoteCard(reply) {
     <div style="margin-bottom:14px;">${renderCartItems(data.items, data.vehicle)}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px 0;"><span style="font-size:10px;font-weight:800;color:var(--green-dk);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);border-radius:999px;padding:5px 8px;">✓ Original Hyundai</span><span style="font-size:10px;font-weight:800;color:var(--brand-dk);background:var(--brand-lt);border:1px solid rgba(15,91,168,.14);border-radius:999px;padding:5px 8px;">✓ Compatibilidade verificada</span></div>
     <div style="background:var(--surface-2);border-radius:14px;padding:14px;margin-bottom:18px;border:1px solid var(--border-2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">VALOR DA PEÇA</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(data.price || 'Valor sob consulta')}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">TOTAL DO PEDIDO</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(totalPrice)}</span></div>
       <div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:rgba(15,91,168,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="quote-note" style="font-size:12px;color:var(--text-2);line-height:1.4;font-weight:500;">${escapeReceiptText(data.note || 'Disponibilidade e compatibilidade serão confirmadas antes da finalização.')}</div></div>
     </div>
     <button class="quote-button" type="button" style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--brand);color:#fff;font-weight:800;cursor:pointer;font-size:14px;box-shadow:0 4px 15px rgba(15,91,168,.25);display:flex;align-items:center;justify-content:center;gap:8px;">Prosseguir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>`;
@@ -2218,7 +2220,10 @@ function extractCartItems() {
 }
 
 function renderCartItems(items, vehicle) {
-  return items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);"><div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--brand),var(--brand-dk));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(item.name)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Hyundai · ${escapeReceiptText(vehicle)} · Qtd. ${item.qty}</div></div></div>`).join('');
+  return items.map(item => `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border-2);">
+    <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.3;">${escapeReceiptText(item.name)}</div><div style="font-size:11px;color:var(--text-3);margin-top:4px;">Hyundai · ${escapeReceiptText(vehicle)} · Qtd. ${item.qty || 1}</div></div>
+    <div style="text-align:right;flex-shrink:0;"><div style="font-size:12px;font-weight:900;color:var(--brand-dk);white-space:nowrap;">${escapeReceiptText(item.price || 'Valor sob consulta')}</div><div style="font-size:9px;color:var(--text-3);margin-top:3px;">valor individual</div></div>
+  </div>`).join('');
 }
 
 function getCartSignature(items) {
@@ -2246,13 +2251,13 @@ function renderQuoteFromConversation(userText, aiReply) {
   if (!items.length) return false;
   window._quoteItems = items;
 
-  const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
-  const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor sob consulta';
+  const prices = [...String(aiReply || '').matchAll(/R\$\s*[\d.]+(?:[,.]\d{2})?/gi)].map(match => match[0].replace(/\s+/g, ' '));
+  const price = prices[0] || 'Valor sob consulta';
   const note = priceMatch
     ? 'Orçamento inicial preparado para o veículo informado.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
-  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part: items[0].name, items, price, note })}`);
+  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part: items[0].name, items, prices, price, note })}`);
 }
 
 function updateQuoteCardFromReply(reply) {
