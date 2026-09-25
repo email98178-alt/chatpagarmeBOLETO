@@ -2221,6 +2221,10 @@ function renderCartItems(items, vehicle) {
   return items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);"><div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--brand),var(--brand-dk));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(item.name)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Hyundai · ${escapeReceiptText(vehicle)} · Qtd. ${item.qty}</div></div></div>`).join('');
 }
 
+function getCartSignature(items) {
+  return (items || []).map(item => `${item.key || item.name}:${item.qty || 1}`).join('|');
+}
+
 function renderQuoteFromConversation(userText, aiReply) {
   const conversation = getUserConversationText();
   const text = String(conversation || userText || '').replace(/\s+/g, ' ').trim();
@@ -2279,15 +2283,19 @@ async function doSend() {
   setTyping(false);
   const quoteConversation = getUserConversationText();
   const hasVehicle = /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
-  const hasItems = extractCartItems().length > 0;
-  const canCreateQuote = hasVehicle && hasItems;
-  const quoteCreated = canCreateQuote && renderQuoteFromConversation(text, reply);
-  if (!quoteCreated && window._quoteCardShown && hasItems) {
-    window._quoteCardShown = false;
+  const currentItems = extractCartItems();
+  const currentSignature = getCartSignature(currentItems);
+  const cartChanged = currentSignature !== (window._lastCartSignature || '');
+  let quoteCreated = false;
+
+  if (hasVehicle && currentItems.length && cartChanged) {
     const oldCard = document.querySelector('.order-confirmation-block');
     if (oldCard) oldCard.remove();
-    renderQuoteFromConversation(text, reply);
+    window._quoteCardShown = false;
+    quoteCreated = renderQuoteFromConversation(text, reply);
+    if (quoteCreated) window._lastCartSignature = getCartSignature(window._quoteItems);
   }
+
   if (!quoteCreated && !window._quoteCardShown && !renderQuoteCard(reply)) await agentSay(reply, true, true);
   saveChatHistory();
   updateSendButtonState();
