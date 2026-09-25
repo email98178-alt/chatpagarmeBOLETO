@@ -2100,7 +2100,8 @@ function renderQuoteCard(reply) {
     setTyping(true);
     const nextReply = await getChatGPTResponse('Prosseguir com este orçamento.', getChatHistoryForAI(), window._currentFlowStep || 2);
     setTyping(false);
-    if (!renderQuoteCard(nextReply)) await agentSay(nextReply, true, true);
+    updateQuoteCardFromReply(nextReply);
+    await agentSay(nextReply, true, true);
     saveChatHistory();
     updateSendButtonState();
   }, { once: true });
@@ -2141,7 +2142,7 @@ function renderQuoteFromConversation(userText, aiReply) {
 }
 
 function updateQuoteCardFromReply(reply) {
-  const card = document.querySelector('.quote-card');
+  const card = document.querySelector('.quote-card, .order-confirmation-block');
   if (!card) return;
   const priceMatch = String(reply || '').match(/R\$\s*[\d.]+(?:[,.]\d{2})?/i) || String(reply || '').match(/(?:valor|preço|preco)[^\n]{0,30}(\d+[.,]\d{2})/i);
   if (priceMatch) {
@@ -2163,16 +2164,13 @@ async function doSend() {
   const { row } = addMsg(text, 'user');
   const bubble = row.querySelector('.bubble');
   if (bubble) bubble.dataset.originalText = text;
-  const quoteConversation = getUserConversationText();
-  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
-  const cardCreatedBeforeAI = canCreateInitialQuote && renderQuoteFromConversation(text, '');
-
   setTyping(true);
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
-  if (cardCreatedBeforeAI) {
-    updateQuoteCardFromReply(reply);
-  } else if (!renderQuoteCard(reply)) {
+  const quoteConversation = getUserConversationText();
+  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+  const quoteCreated = canCreateInitialQuote && renderQuoteFromConversation(text, reply);
+  if (!quoteCreated && !renderQuoteCard(reply)) {
     await agentSay(reply, true, true);
   }
   saveChatHistory();
