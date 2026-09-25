@@ -1135,8 +1135,8 @@ html,body{
 
 <script>
 const msgsEl         = document.getElementById('msgs');
-const LOCAL_STORAGE_KEY = 'hyundai_autopecas_chat_history_v1';
-const STATE_STORAGE_KEY = 'hyundai_autopecas_chat_state_v1';
+const LOCAL_STORAGE_KEY = 'hyundai_autopecas_chat_history_v2';
+const STATE_STORAGE_KEY = 'hyundai_autopecas_chat_state_v2';
 const inputEl        = document.getElementById('msgInput');
 const inputWrapEl    = document.getElementById('inputWrap');
 const sendBtnEl      = document.getElementById('sendBtn');
@@ -1997,7 +1997,7 @@ Você é Fe, vendedora da AutoPeças Hyundai. Fale em português do Brasil, com 
 FLUXO PADRÃO:
 1. Para iniciar o orçamento, solicite somente o modelo/ano do Hyundai e a peça desejada. Não peça motorização, versão, chassi, placa ou outros dados antes de apresentar o orçamento inicial.
 2. Com o modelo/ano e a peça informados, apresente imediatamente o orçamento inicial com os dados reais disponíveis. Se o preço, estoque ou compatibilidade ainda precisarem de confirmação, informe isso claramente sem inventar valores.
-   Quando houver preço real para apresentar, responda SOMENTE neste formato, sem markdown e sem texto antes ou depois: ORCAMENTO_CARD:{"vehicle":"MODELO/ANO","part":"NOME DA PEÇA","price":"R$ 0,00","note":"observação curta"}. O sistema transformará esse marcador em um cartão visual com botão Prosseguir.
+   Responda normalmente em texto curto e profissional. O sistema criará o cartão visual do orçamento a partir dos dados da conversa, sem exigir formato ou código especial.
 3. Só solicite motorização, versão ou chassi depois do orçamento e apenas se forem realmente necessários para confirmar a compatibilidade da peça escolhida.
 4. Pergunte se o cliente deseja alterar o orçamento.
 5. Após aprovação, pergunte se deseja envio ou retirada.
@@ -2067,6 +2067,7 @@ function renderQuoteCard(reply) {
   }
 
   if (!data || !data.vehicle || !data.part || !data.price) return false;
+  window._quoteCardShown = true;
 
   const card = document.createElement('div');
   card.className = 'quote-card';
@@ -2101,6 +2102,25 @@ function renderQuoteCard(reply) {
   return true;
 }
 
+function renderQuoteFromConversation(userText, aiReply) {
+  const text = String(userText || '').replace(/\s+/g, ' ').trim();
+  const year = text.match(/\b(19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/);
+  if (!year) return false;
+
+  const vehicle = text.slice(0, year.index + year[0].length).replace(/[,:-]+\s*$/, '').trim();
+  let part = text.slice(year.index + year[0].length).replace(/^[\s,:;–—-]+/, '').trim();
+  if (!part) part = 'Peça Hyundai solicitada';
+
+  const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
+  const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor a confirmar';
+  const note = priceMatch
+    ? 'Orçamento inicial preparado para o veículo informado.'
+    : 'Disponibilidade e valor serão confirmados antes da finalização.';
+
+  const payload = { vehicle, part, price, note };
+  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify(payload)}`);
+}
+
 // ── FUNÇÃO CORRIGIDA doSend() ──────────────────────────────────
 async function doSend() {
   const text = inputEl.value.trim();
@@ -2113,7 +2133,10 @@ async function doSend() {
   setTyping(true);
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
-  if (!renderQuoteCard(reply)) await agentSay(reply, true, true);
+  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(text);
+  if (!(canCreateInitialQuote && renderQuoteFromConversation(text, reply)) && !renderQuoteCard(reply)) {
+    await agentSay(reply, true, true);
+  }
   saveChatHistory();
   updateSendButtonState();
 }
