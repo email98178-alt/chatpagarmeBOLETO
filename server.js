@@ -762,6 +762,7 @@ function getConfiguredPagarmeAccounts() {
 }
 
 app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function onlyDigits(value) {
@@ -1420,13 +1421,13 @@ io.on('connection', socket => {
   });
 });
 
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
 app.get('/admin', (_req, res) => {
-  const adminPath = path.join(__dirname, 'admin.html');
+  const adminPath = path.join(__dirname, 'dist', 'admin.html');
   if (!require('fs').existsSync(adminPath)) return res.status(404).send('Painel administrativo não incluído.');
   return res.sendFile(adminPath);
 });
-app.get('/*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/*', (_req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
 
 if (require.main === module) {
   server.listen(PORT, () => {
