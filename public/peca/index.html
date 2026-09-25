@@ -2257,7 +2257,7 @@ function renderQuoteFromConversation(userText, aiReply) {
 
   const prices = [...String(aiReply || '').matchAll(/R\$\s*[\d.]+(?:[,.]\d{2})?/gi)].map(match => match[0].replace(/\s+/g, ' '));
   const price = prices[0] || 'Valor sob consulta';
-  const note = priceMatch
+  const note = prices.length
     ? 'Orçamento inicial preparado para o veículo informado.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
