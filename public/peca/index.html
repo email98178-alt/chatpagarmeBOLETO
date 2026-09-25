@@ -944,6 +944,26 @@ html,body{
 }
 
 
+
+/* ── ORÇAMENTO DE AUTOPEÇA ── */
+.quote-card{width:min(100%,360px);align-self:flex-start;margin:12px 0 8px 38px;background:#fff;border:1px solid var(--border-2);border-radius:18px;overflow:hidden;box-shadow:0 5px 18px rgba(15,91,168,.12);animation:cardIn .45s var(--spring);}
+.quote-head{padding:14px 16px;background:linear-gradient(145deg,var(--brand-dk),var(--brand-mid));color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.quote-brand{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.9;}
+.quote-badge{font-size:10px;font-weight:800;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 8px;}
+.quote-body{padding:16px;}
+.quote-vehicle{font-size:13px;color:var(--text-2);margin-bottom:12px;}
+.quote-vehicle strong{display:block;color:var(--text);font-size:15px;margin-top:3px;}
+.quote-part{border-top:1px solid var(--border-2);border-bottom:1px solid var(--border-2);padding:13px 0;margin-bottom:13px;}
+.quote-part-label{font-size:10px;color:var(--text-3);font-weight:800;text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;}
+.quote-part-name{font-size:15px;font-weight:800;color:var(--text);}
+.quote-price-row{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-bottom:8px;}
+.quote-price-label{font-size:11px;color:var(--text-3);font-weight:600;}
+.quote-price{font-size:24px;color:var(--brand-dk);font-weight:900;letter-spacing:-.5px;white-space:nowrap;}
+.quote-note{font-size:11px;color:var(--text-2);line-height:1.45;margin-bottom:14px;}
+.quote-provenance{display:flex;align-items:center;gap:6px;color:var(--green-dk);font-size:11px;font-weight:700;margin-bottom:14px;}
+.quote-button{width:100%;border:0;border-radius:12px;background:var(--brand);color:#fff;padding:13px 16px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 5px 12px var(--brand-glow);transition:transform .15s ease,background .15s ease;}
+.quote-button:hover{background:var(--brand-dk);}.quote-button:active{transform:scale(.98);}.quote-button:disabled{opacity:.65;cursor:wait;}
+@media(max-width:380px){.quote-card{margin-left:0;}.quote-price{font-size:21px;}}
 </style>
 </head>
 <body>
@@ -1977,6 +1997,7 @@ Você é Fe, vendedora da AutoPeças Hyundai. Fale em português do Brasil, com 
 FLUXO PADRÃO:
 1. Para iniciar o orçamento, solicite somente o modelo/ano do Hyundai e a peça desejada. Não peça motorização, versão, chassi, placa ou outros dados antes de apresentar o orçamento inicial.
 2. Com o modelo/ano e a peça informados, apresente imediatamente o orçamento inicial com os dados reais disponíveis. Se o preço, estoque ou compatibilidade ainda precisarem de confirmação, informe isso claramente sem inventar valores.
+   Quando houver preço real para apresentar, responda SOMENTE neste formato, sem markdown e sem texto antes ou depois: ORCAMENTO_CARD:{"vehicle":"MODELO/ANO","part":"NOME DA PEÇA","price":"R$ 0,00","note":"observação curta"}. O sistema transformará esse marcador em um cartão visual com botão Prosseguir.
 3. Só solicite motorização, versão ou chassi depois do orçamento e apenas se forem realmente necessários para confirmar a compatibilidade da peça escolhida.
 4. Pergunte se o cliente deseja alterar o orçamento.
 5. Após aprovação, pergunte se deseja envio ou retirada.
@@ -2013,6 +2034,52 @@ ETAPA ATUAL: ${currentFlowStep}
   }
 }
 
+function renderQuoteCard(reply) {
+  const marker = 'ORCAMENTO_CARD:';
+  const markerIndex = reply.indexOf(marker);
+  if (markerIndex < 0) return false;
+  let data;
+  try {
+    const raw = reply.slice(markerIndex + marker.length).trim();
+    data = JSON.parse(raw);
+  } catch (error) {
+    return false;
+  }
+  if (!data || !data.vehicle || !data.part || !data.price) return false;
+
+  const card = document.createElement('div');
+  card.className = 'quote-card';
+  card.innerHTML = `
+    <div class="quote-head">
+      <span class="quote-brand">AutoPeças Hyundai</span>
+      <span class="quote-badge">Orçamento</span>
+    </div>
+    <div class="quote-body">
+      <div class="quote-vehicle">Veículo<strong>${escapeReceiptText(data.vehicle)}</strong></div>
+      <div class="quote-part"><div class="quote-part-label">Peça solicitada</div><div class="quote-part-name">${escapeReceiptText(data.part)}</div></div>
+      <div class="quote-price-row"><span class="quote-price-label">Valor da peça</span><strong class="quote-price">${escapeReceiptText(data.price)}</strong></div>
+      <div class="quote-provenance">✓ Peça original e de procedência</div>
+      <div class="quote-note">${escapeReceiptText(data.note || 'Disponibilidade e compatibilidade serão confirmadas antes da finalização.')}</div>
+      <button class="quote-button" type="button">Prosseguir</button>
+    </div>`;
+  msgsEl.appendChild(card);
+  scrollDown(true);
+  const button = card.querySelector('.quote-button');
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = 'Prosseguindo...';
+    addMsg('Prosseguir', 'user');
+    setTyping(true);
+    const nextReply = await getChatGPTResponse('Prosseguir com este orçamento.', getChatHistoryForAI(), window._currentFlowStep || 2);
+    setTyping(false);
+    if (!renderQuoteCard(nextReply)) await agentSay(nextReply, true, true);
+    saveChatHistory();
+    updateSendButtonState();
+  }, { once: true });
+  saveChatHistory();
+  return true;
+}
+
 // ── FUNÇÃO CORRIGIDA doSend() ──────────────────────────────────
 async function doSend() {
   const text = inputEl.value.trim();
@@ -2025,7 +2092,7 @@ async function doSend() {
   setTyping(true);
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
-  await agentSay(reply, true, true);
+  if (!renderQuoteCard(reply)) await agentSay(reply, true, true);
   saveChatHistory();
   updateSendButtonState();
 }
