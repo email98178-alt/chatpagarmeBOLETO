@@ -2034,6 +2034,38 @@ ETAPA ATUAL: ${currentFlowStep}
   }
 }
 
+function professionalizeProductName(value) {
+  const raw = String(value || '').replace(/\s+/g, ' ').trim();
+  const normalized = raw.toLocaleLowerCase('pt-BR');
+  const catalogNames = [
+    [/para[- ]?brisa|parabrisa|windshield/, 'Vidro (Para-brisa) — Original'],
+    [/vidro/, 'Vidro automotivo — Original'],
+    [/retrovisor/, 'Retrovisor externo — Original'],
+    [/farol/, 'Conjunto do farol — Original'],
+    [/lanterna/, 'Lanterna traseira — Original'],
+    [/pastilha/, 'Pastilhas de freio — Original'],
+    [/disco de freio|disco/, 'Disco de freio — Original'],
+    [/amortecedor/, 'Amortecedor — Original'],
+    [/radiador/, 'Radiador do motor — Original'],
+    [/compressor.*ar|ar[- ]condicionado/, 'Compressor do ar-condicionado — Original'],
+    [/palheta|limpador/, 'Palheta do limpador — Original'],
+    [/bateria/, 'Bateria automotiva — Original'],
+    [/alternador/, 'Alternador — Original'],
+    [/motor de partida|arranque/, 'Motor de partida — Original'],
+    [/filtro de ar/, 'Filtro de ar — Original'],
+    [/filtro de óleo|filtro de oleo/, 'Filtro de óleo — Original'],
+    [/vela/, 'Vela de ignição — Original'],
+    [/para[- ]?choque/, 'Para-choque — Original'],
+    [/capô|capo/, 'Capô — Original'],
+    [/maçaneta|macaneta/, 'Maçaneta externa — Original'],
+    [/fechadura/, 'Fechadura da porta — Original']
+  ];
+  const found = catalogNames.find(([pattern]) => pattern.test(normalized));
+  if (found) return found[1];
+  if (/original|genu[ií]n/.test(normalized)) return raw;
+  return raw ? `${raw.charAt(0).toLocaleUpperCase('pt-BR')}${raw.slice(1)} — Original` : 'Peça Hyundai — Original';
+}
+
 function renderQuoteCard(reply) {
   const text = String(reply || '').trim();
   const markerMatch = text.match(/OR[CÇ]AMENTO[_\s-]*CARD\s*:/i);
@@ -2067,6 +2099,7 @@ function renderQuoteCard(reply) {
   }
 
   if (!data || !data.vehicle || !data.part || !data.price) return false;
+  data.part = professionalizeProductName(data.part);
   window._quoteCardShown = true;
 
   const card = document.createElement('div');
@@ -2077,14 +2110,15 @@ function renderQuoteCard(reply) {
       <div style="width:32px;height:32px;border-radius:10px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);box-shadow:0 2px 8px var(--brand-glow);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       </div>
-      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Resumo do Pedido</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Confira os dados da peça</div></div>
+      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Orçamento personalizado</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Cotação inicial</div></div>
     </div>
     <div style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);">
         <div style="width:44px;height:44px;border-radius:8px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);font-size:20px;font-weight:900;">H</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.2;">${escapeReceiptText(data.part)}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px;">Hyundai · ${escapeReceiptText(data.vehicle)}</div></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(data.part)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Aplicação: Hyundai · ${escapeReceiptText(data.vehicle)}</div></div>
       </div>
     </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px 0;"><span style="font-size:10px;font-weight:800;color:var(--green-dk);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);border-radius:999px;padding:5px 8px;">✓ Original Hyundai</span><span style="font-size:10px;font-weight:800;color:var(--brand-dk);background:var(--brand-lt);border:1px solid rgba(15,91,168,.14);border-radius:999px;padding:5px 8px;">✓ Compatibilidade verificada</span></div>
     <div style="background:var(--surface-2);border-radius:14px;padding:14px;margin-bottom:18px;border:1px solid var(--border-2);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">VALOR DA PEÇA</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(data.price || 'Valor sob consulta')}</span></div>
       <div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:rgba(15,91,168,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="quote-note" style="font-size:12px;color:var(--text-2);line-height:1.4;font-weight:500;">${escapeReceiptText(data.note || 'Disponibilidade e compatibilidade serão confirmadas antes da finalização.')}</div></div>
