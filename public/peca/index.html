@@ -1135,8 +1135,8 @@ html,body{
 
 <script>
 const msgsEl         = document.getElementById('msgs');
-const LOCAL_STORAGE_KEY = 'hyundai_autopecas_chat_history_v2';
-const STATE_STORAGE_KEY = 'hyundai_autopecas_chat_state_v2';
+const LOCAL_STORAGE_KEY = 'hyundai_autopecas_chat_history_v3';
+const STATE_STORAGE_KEY = 'hyundai_autopecas_chat_state_v3';
 const inputEl        = document.getElementById('msgInput');
 const inputWrapEl    = document.getElementById('inputWrap');
 const sendBtnEl      = document.getElementById('sendBtn');
@@ -2012,7 +2012,7 @@ OBJEÇÕES:
 - Para foto, só prometa foto se houver uma imagem cadastrada; caso contrário diga que a disponibilidade será verificada.
 - Para preço, prazo, frete, originalidade, garantia e procedência, seja honesta e não invente informações nem descontos.
 - Se houver desconfiança, explique nota fiscal, rastreio e formas de pagamento disponíveis sem prometer o que não estiver configurado.
-- Se o cliente alterar veículo ou peça, atualize os dados e refaça a confirmação.
+- Corrija silenciosamente erros claros de digitação no modelo do carro ou no nome da peça. Nunca repita o erro do cliente; use a grafia correta na resposta e no orçamento. Exemplos: “cretaa” → “Creta”, “parabris” → “para-brisa”, “retrovisorr” → “retrovisor”. Se houver mais de uma interpretação possível, confirme com o cliente de forma objetiva.
 - Nunca pule confirmação, envio/retirada ou cadastro.
 
 REGRAS:
@@ -2034,9 +2034,31 @@ ETAPA ATUAL: ${currentFlowStep}
   }
 }
 
-function professionalizeProductName(value) {
+function correctVehicleName(value) {
   const raw = String(value || '').replace(/\s+/g, ' ').trim();
   const normalized = raw.toLocaleLowerCase('pt-BR');
+  const known = [
+    [/\bcreta+a?\b/, 'Creta'],
+    [/\bhb\s*[- ]?20\b/, 'HB20'],
+    [/\bix\s*35\b/, 'ix35'],
+    [/\btucson+n?\b/, 'Tucson'],
+    [/\bsanta\s*fe\b/, 'Santa Fe'],
+    [/\bveracruz\b/, 'Veracruz'],
+    [/\bveloster\b/, 'Veloster'],
+    [/\bazera\b/, 'Azera'],
+    [/\bi30\b/, 'i30']
+  ];
+  const found = known.find(([pattern]) => pattern.test(normalized));
+  if (!found) return raw;
+  return raw.replace(found[0], found[1]);
+}
+
+function professionalizeProductName(value) {
+  const raw = String(value || '').replace(/\s+/g, ' ').trim();
+  const normalized = raw.toLocaleLowerCase('pt-BR')
+    .replace(/parabris[aá]?|parabris[ao]s?/g, 'parabrisa')
+    .replace(/retrovis+or/g, 'retrovisor')
+    .replace(/amortecedo+r+/g, 'amortecedor');
   const catalogNames = [
     [/para[- ]?brisa|parabrisa|windshield/, 'Vidro (Para-brisa) — Original'],
     [/vidro/, 'Vidro automotivo — Original'],
@@ -2110,11 +2132,11 @@ function renderQuoteCard(reply) {
       <div style="width:32px;height:32px;border-radius:10px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);box-shadow:0 2px 8px var(--brand-glow);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       </div>
-      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Orçamento personalizado</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Cotação inicial</div></div>
+      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Orçamento personalizado</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Atendimento especializado</div></div>
     </div>
     <div style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);">
-        <div style="width:44px;height:44px;border-radius:8px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);font-size:20px;font-weight:900;">H</div>
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,var(--brand),var(--brand-dk));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 10px var(--brand-glow);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3-8-3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(data.part)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Aplicação: Hyundai · ${escapeReceiptText(data.vehicle)}</div></div>
       </div>
     </div>
@@ -2159,8 +2181,8 @@ function renderQuoteFromConversation(userText, aiReply) {
   const beforeYear = text.slice(0, year.index);
   const separatorIndex = Math.max(beforeYear.lastIndexOf('|'), beforeYear.lastIndexOf('\n'));
   const vehicleStart = separatorIndex >= 0 ? separatorIndex + 1 : 0;
-  const vehicle = text.slice(vehicleStart, year.index + year[0].length)
-    .replace(/^[\s,:;–—-]+|[\s,:;–—-]+$/g, '').trim();
+  const vehicle = correctVehicleName(text.slice(vehicleStart, year.index + year[0].length)
+    .replace(/^[\s,:;–—-]+|[\s,:;–—-]+$/g, '').trim());
 
   let part = text.slice(year.index + year[0].length)
     .replace(/^[\s|,:;–—-]+/, '').split('|')[0].trim();
@@ -2202,11 +2224,9 @@ async function doSend() {
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
   const quoteConversation = getUserConversationText();
-  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
-  const quoteCreated = canCreateInitialQuote && renderQuoteFromConversation(text, reply);
-  if (!quoteCreated && !renderQuoteCard(reply)) {
-    await agentSay(reply, true, true);
-  }
+  const canCreateQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+  const quoteCreated = canCreateQuote && renderQuoteFromConversation(text, reply);
+  if (!quoteCreated && !renderQuoteCard(reply)) await agentSay(reply, true, true);
   saveChatHistory();
   updateSendButtonState();
 }
