@@ -2007,6 +2007,19 @@ FLUXO PADRÃO:
 8. Informe que os dados serão analisados e, depois, apresente Pix ou cartão com valores realmente configurados.
 9. Se escolher cartão, diga que será gerado um link de pagamento. Se escolher Pix, diga que será gerado QR Code/copia e cola. Nunca confirme pagamento sem confirmação do sistema.
 
+COMPORTAMENTO AUTÔNOMO DE VENDEDORA:
+- Entenda a intenção antes de responder: novo orçamento, adição, remoção, troca, quantidade, comparação, dúvida técnica, objeção, pagamento ou finalização.
+- Conduza a conversa sem depender de comandos exatos. Interprete frases como “inclui também”, “tira o primeiro”, “quero só o mais barato”, “tem os dois?”, “mude para outro modelo” e “vamos fechar”.
+- Ao receber uma nova peça, preserve o que já foi pedido e trate o conjunto como um carrinho. Ao remover ou substituir, confirme o resultado atualizado e não repita o pedido antigo como se ainda estivesse ativo.
+- Mostre o benefício de forma objetiva: compatibilidade com o veículo, condição da peça, disponibilidade, preço individual e total. Não pressione o cliente e não crie urgência artificial.
+- Se o cliente comparar preço, explique a diferença entre as opções disponíveis. Se não houver opções ou tabela real, diga isso claramente em vez de inventar desconto ou concorrente.
+- Se pedir desconto, negocie somente dentro das condições reais configuradas. Se não houver desconto configurado, ofereça revisar quantidade, frete ou alternativa compatível, sem prometer aprovação.
+- Se pedir foto, garantia, nota fiscal, prazo, frete, retirada ou procedência, responda primeiro à dúvida e retome o próximo passo do orçamento.
+- Se a mensagem estiver incompleta, faça uma única pergunta objetiva. Não repita perguntas já respondidas no histórico.
+- Se houver ambiguidade entre duas peças ou modelos, apresente as duas interpretações e peça confirmação antes de cotar.
+- Depois que o cliente aprovar o carrinho, avance para envio/retirada e cadastro. Não volte a pedir modelo ou peça já confirmados.
+- Sempre termine com um próximo passo claro: confirmar item, ajustar carrinho, escolher envio/retirada ou informar dado necessário.
+
 OBJEÇÕES:
 - Responda primeiro a dúvida do cliente e depois retome o ponto pendente do fluxo.
 - Para compatibilidade, use primeiro o modelo e ano já informados. Só solicite motor, versão ou chassi depois do orçamento e apenas se a peça não puder ser confirmada com modelo/ano.
@@ -2142,13 +2155,13 @@ function renderQuoteCard(reply) {
       <div style="width:32px;height:32px;border-radius:10px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;color:var(--brand);box-shadow:0 2px 8px var(--brand-glow);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       </div>
-      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Orçamento personalizado</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Atendimento especializado</div></div>
+      <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Resumo do seu pedido</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Atendimento especializado</div></div>
     </div>
     <div style="margin-bottom:14px;">${renderCartItems(data.items, data.vehicle)}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px 0;"><span style="font-size:10px;font-weight:800;color:var(--green-dk);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);border-radius:999px;padding:5px 8px;">✓ Original Hyundai</span><span style="font-size:10px;font-weight:800;color:var(--brand-dk);background:var(--brand-lt);border:1px solid rgba(15,91,168,.14);border-radius:999px;padding:5px 8px;">✓ Compatibilidade verificada</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px 0;"><span style="font-size:10px;font-weight:800;color:var(--green-dk);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);border-radius:999px;padding:5px 8px;">✓ Peça selecionada</span><span style="font-size:10px;font-weight:800;color:var(--brand-dk);background:var(--brand-lt);border:1px solid rgba(15,91,168,.14);border-radius:999px;padding:5px 8px;">✓ Aplicação por modelo/ano</span></div>
     <div style="background:var(--surface-2);border-radius:14px;padding:14px;margin-bottom:18px;border:1px solid var(--border-2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">TOTAL DO PEDIDO</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(totalPrice)}</span></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:rgba(15,91,168,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="quote-note" style="font-size:12px;color:var(--text-2);line-height:1.4;font-weight:500;">${escapeReceiptText(data.note || 'Disponibilidade e compatibilidade serão confirmadas antes da finalização.')}</div></div>
+      <div style="font-size:10px;color:var(--text-3);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px;">Resumo financeiro</div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">TOTAL DO PEDIDO</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(totalPrice)}</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:rgba(15,91,168,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="quote-note" style="font-size:12px;color:var(--text-2);line-height:1.4;font-weight:500;">${escapeReceiptText(data.note || 'Valores organizados por peça. A disponibilidade final será confirmada antes da conclusão.')}</div></div>
     </div>
     <button class="quote-button" type="button" style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--brand);color:#fff;font-weight:800;cursor:pointer;font-size:14px;box-shadow:0 4px 15px rgba(15,91,168,.25);display:flex;align-items:center;justify-content:center;gap:8px;">Prosseguir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>`;
   msgsEl.appendChild(card);
@@ -2258,7 +2271,7 @@ function renderQuoteFromConversation(userText, aiReply) {
   const prices = [...String(aiReply || '').matchAll(/R\$\s*[\d.]+(?:[,.]\d{2})?/gi)].map(match => match[0].replace(/\s+/g, ' '));
   const price = prices[0] || 'Valor sob consulta';
   const note = prices.length
-    ? 'Orçamento inicial preparado para o veículo informado.'
+    ? 'Valores organizados por peça para facilitar sua conferência.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
   return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part: items[0].name, items, prices, price, note })}`);
@@ -2273,7 +2286,7 @@ function updateQuoteCardFromReply(reply) {
     const priceEl = card.querySelector('.quote-price');
     if (priceEl && detectedPrice.trim() !== 'R$') priceEl.textContent = detectedPrice.replace(/\s+/g, ' ');
     const noteEl = card.querySelector('.quote-note');
-    if (noteEl) noteEl.textContent = 'Orçamento inicial preparado para o veículo informado.';
+    if (noteEl) noteEl.textContent = 'Valores atualizados conforme a nova composição do pedido.';
     saveChatHistory();
   }
 }
