@@ -2102,14 +2102,28 @@ function renderQuoteCard(reply) {
   return true;
 }
 
+function getUserConversationText() {
+  return [...document.querySelectorAll('.row.user .bubble')]
+    .map(bubble => (bubble.dataset.originalText || bubble.innerText || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' | ');
+}
+
 function renderQuoteFromConversation(userText, aiReply) {
-  const text = String(userText || '').replace(/\s+/g, ' ').trim();
+  const conversation = getUserConversationText();
+  const text = String(conversation || userText || '').replace(/\s+/g, ' ').trim();
   const year = text.match(/\b(19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/);
   if (!year) return false;
 
-  const vehicle = text.slice(0, year.index + year[0].length).replace(/[,:-]+\s*$/, '').trim();
-  let part = text.slice(year.index + year[0].length).replace(/^[\s,:;–—-]+/, '').trim();
-  if (!part) part = 'Peça Hyundai solicitada';
+  const beforeYear = text.slice(0, year.index);
+  const separatorIndex = Math.max(beforeYear.lastIndexOf('|'), beforeYear.lastIndexOf('\n'));
+  const vehicleStart = separatorIndex >= 0 ? separatorIndex + 1 : 0;
+  const vehicle = text.slice(vehicleStart, year.index + year[0].length)
+    .replace(/^[\s,:;–—-]+|[\s,:;–—-]+$/g, '').trim();
+
+  let part = text.slice(year.index + year[0].length)
+    .replace(/^[\s|,:;–—-]+/, '').split('|')[0].trim();
+  if (!part || /^(oi|olá|ola|sim|não|nao)$/i.test(part)) part = 'Peça Hyundai solicitada';
 
   const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
   const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor a confirmar';
@@ -2117,8 +2131,7 @@ function renderQuoteFromConversation(userText, aiReply) {
     ? 'Orçamento inicial preparado para o veículo informado.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
-  const payload = { vehicle, part, price, note };
-  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify(payload)}`);
+  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part, price, note })}`);
 }
 
 // ── FUNÇÃO CORRIGIDA doSend() ──────────────────────────────────
@@ -2133,7 +2146,8 @@ async function doSend() {
   setTyping(true);
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
-  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(text);
+  const quoteConversation = getUserConversationText();
+  const canCreateInitialQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
   if (!(canCreateInitialQuote && renderQuoteFromConversation(text, reply)) && !renderQuoteCard(reply)) {
     await agentSay(reply, true, true);
   }
