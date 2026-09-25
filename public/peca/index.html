@@ -1977,7 +1977,8 @@ function pause(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 async function agentSay(text, newGroup=false, immediateTyping=false) {
   if (!immediateTyping) await pause(800 + Math.random() * 700);
-  const typingMs = Math.max(1200, Math.min(text.split(' ').length * 200 + 600, 3500));
+  text = String(text || 'Como posso ajudar com seu pedido?');
+  const typingMs = Math.max(1200, Math.min(text.split(/\s+/).length * 200 + 600, 3500));
   setTyping(true); await pause(typingMs); setTyping(false);
   addMsg(text, 'agent', newGroup); 
 }
@@ -2027,7 +2028,10 @@ CARRINHO ATUAL: ${JSON.stringify(window._quoteItems || [])}
 ETAPA ATUAL: ${currentFlowStep}
 `;
   try {
-    const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: userMessage, context, currentFlowStep }) });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: userMessage, context, currentFlowStep }), signal: controller.signal });
+    clearTimeout(timeout);
     const data = await response.json();
     return data.reply || 'Pode me confirmar o modelo, ano e motorização do Hyundai?';
   } catch (error) {
@@ -2283,36 +2287,44 @@ async function doSend() {
   const { row } = addMsg(text, 'user');
   const bubble = row.querySelector('.bubble');
   if (bubble) bubble.dataset.originalText = text;
-  setTyping(true);
-  const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
-  setTyping(false);
-  const quoteConversation = getUserConversationText();
-  const hasVehicle = /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
-  const currentItems = extractCartItems();
-  const currentSignature = getCartSignature(currentItems);
-  const cartChanged = currentSignature !== (window._lastCartSignature || '');
-  let quoteCreated = false;
+  try {
+    setTyping(true);
+    const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
+    setTyping(false);
+    const quoteConversation = getUserConversationText();
+    const hasVehicle = /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+    const currentItems = extractCartItems();
+    const currentSignature = getCartSignature(currentItems);
+    const cartChanged = currentSignature !== (window._lastCartSignature || '');
+    let quoteCreated = false;
 
-  if (hasVehicle && currentItems.length && cartChanged) {
-    const oldCard = document.querySelector('.order-confirmation-block');
-    if (oldCard) oldCard.remove();
-    window._quoteCardShown = false;
-    quoteCreated = renderQuoteFromConversation(text, reply);
-    if (quoteCreated) window._lastCartSignature = getCartSignature(window._quoteItems);
-  }
+    if (hasVehicle && currentItems.length && cartChanged) {
+      const oldCard = document.querySelector('.order-confirmation-block');
+      if (oldCard) oldCard.remove();
+      window._quoteCardShown = false;
+      quoteCreated = renderQuoteFromConversation(text, reply);
+      if (quoteCreated) window._lastCartSignature = getCartSignature(window._quoteItems);
+    }
 
-  let cardRendered = quoteCreated;
-  if (!cardRendered && !window._quoteCardShown) cardRendered = renderQuoteCard(reply);
-  if (cardRendered) {
-    const visibleReply = /OR[CÇ]AMENTO[_\s-]*CARD\s*:/i.test(String(reply || ''))
-      ? 'Preparei o resumo atualizado das peças para você. Confira os itens, valores individuais e o total do pedido.'
-      : (reply || 'Preparei o resumo atualizado das peças para você.');
-    await agentSay(visibleReply, true, true);
-  } else {
-    await agentSay(reply || 'Como posso ajudar com seu pedido?', true, true);
+    let cardRendered = quoteCreated;
+    if (!cardRendered && !window._quoteCardShown) cardRendered = renderQuoteCard(reply);
+    if (cardRendered) {
+      const visibleReply = /OR[CÇ]AMENTO[_\s-]*CARD\s*:/i.test(String(reply || ''))
+        ? 'Preparei o resumo atualizado das peças para você. Confira os itens, valores individuais e o total do pedido.'
+        : (reply || 'Preparei o resumo atualizado das peças para você.');
+      await agentSay(visibleReply, true, true);
+    } else {
+      await agentSay(reply || 'Como posso ajudar com seu pedido?', true, true);
+    }
+  } catch (error) {
+    console.error('Erro no fluxo do chat:', error);
+    setTyping(false);
+    await agentSay('Tive uma instabilidade momentânea, mas continuo aqui. Pode enviar sua mensagem novamente, por favor?', true, true);
+  } finally {
+    setTyping(false);
+    saveChatHistory();
+    updateSendButtonState();
   }
-  saveChatHistory();
-  updateSendButtonState();
 }
 
 function addProfessionalStatusCard() {
