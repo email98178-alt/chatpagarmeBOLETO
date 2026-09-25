@@ -1625,7 +1625,8 @@ function saveChatHistory() {
     boletoCopyClicked: window._boletoCopyClicked || false,
         boletoCopyReminderSent: window._boletoCopyReminderSent || false,
     boletoPaymentReminderSent: window._boletoPaymentReminderSent || false,
-    orderConfirmationShown: window._orderConfirmationShown || false
+    orderConfirmationShown: window._orderConfirmationShown || false,
+    quoteItems: window._quoteItems || []
   };
   try {
     localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
@@ -2321,12 +2322,7 @@ async function doSend() {
 
     let cardRendered = quoteCreated;
     if (!cardRendered && !window._quoteCardShown) cardRendered = renderQuoteCard(reply);
-    if (cardRendered) {
-      const visibleReply = /OR[CÇ]AMENTO[_\s-]*CARD\s*:/i.test(String(reply || ''))
-        ? 'Preparei o resumo atualizado das peças para você. Confira os itens, valores individuais e o total do pedido.'
-        : (reply || 'Preparei o resumo atualizado das peças para você.');
-      await agentSay(visibleReply, true, true);
-    } else {
+    if (!cardRendered) {
       await agentSay(reply || 'Como posso ajudar com seu pedido?', true, true);
     }
   } catch (error) {
@@ -2358,6 +2354,9 @@ function addProfessionalStatusCard() {
     const state = JSON.parse(savedState);
     lastSender = state.lastSender || null;
     window._currentFlowStep = state.flowStep || 1;
+    window._quoteItems = Array.isArray(state.quoteItems) ? state.quoteItems : [];
+    window._lastCartSignature = getCartSignature(window._quoteItems);
+    window._quoteCardShown = !!msgsEl.querySelector('.order-confirmation-block');
     scrollDown(true);
     return;
   }
