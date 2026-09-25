@@ -2023,6 +2023,7 @@ REGRAS:
 
 HISTÓRICO:
 ${chatHistory}
+CARRINHO ATUAL: ${JSON.stringify(window._quoteItems || [])}
 ETAPA ATUAL: ${currentFlowStep}
 `;
   try {
@@ -2121,7 +2122,10 @@ function renderQuoteCard(reply) {
   }
 
   if (!data || !data.vehicle || !data.part || !data.price) return false;
-  data.part = professionalizeProductName(data.part);
+  data.items = Array.isArray(data.items) && data.items.length ? data.items : [{ name: professionalizeProductName(data.part), qty: 1 }];
+  data.items = data.items.map(item => ({ ...item, name: professionalizeProductName(item.name) }));
+  data.part = data.items[0].name;
+  window._quoteItems = data.items;
   window._quoteCardShown = true;
 
   const card = document.createElement('div');
@@ -2134,12 +2138,7 @@ function renderQuoteCard(reply) {
       </div>
       <div><div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Orçamento personalizado</div><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">AutoPeças Hyundai · Atendimento especializado</div></div>
     </div>
-    <div style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);">
-        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,var(--brand),var(--brand-dk));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 10px var(--brand-glow);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3-8-3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(data.part)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Aplicação: Hyundai · ${escapeReceiptText(data.vehicle)}</div></div>
-      </div>
-    </div>
+    <div style="margin-bottom:14px;">${renderCartItems(data.items, data.vehicle)}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px 0;"><span style="font-size:10px;font-weight:800;color:var(--green-dk);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);border-radius:999px;padding:5px 8px;">✓ Original Hyundai</span><span style="font-size:10px;font-weight:800;color:var(--brand-dk);background:var(--brand-lt);border:1px solid rgba(15,91,168,.14);border-radius:999px;padding:5px 8px;">✓ Compatibilidade verificada</span></div>
     <div style="background:var(--surface-2);border-radius:14px;padding:14px;margin-bottom:18px;border:1px solid var(--border-2);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">VALOR DA PEÇA</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(data.price || 'Valor sob consulta')}</span></div>
@@ -2172,6 +2171,56 @@ function getUserConversationText() {
     .join(' | ');
 }
 
+function getUserMessages() {
+  return [...document.querySelectorAll('.row.user .bubble')]
+    .map(bubble => (bubble.dataset.originalText || bubble.innerText || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function extractCartItems() {
+  const catalog = [
+    [/para[- ]?brisa|parabrisa|parabris/, 'Vidro (Para-brisa) — Original'],
+    [/retrovis/, 'Retrovisor externo — Original'],
+    [/farol/, 'Conjunto do farol — Original'],
+    [/lanterna/, 'Lanterna traseira — Original'],
+    [/pastilha/, 'Pastilhas de freio — Original'],
+    [/disco de freio|disco/, 'Disco de freio — Original'],
+    [/amortecedor/, 'Amortecedor — Original'],
+    [/radiador/, 'Radiador do motor — Original'],
+    [/compressor.*ar|ar[- ]condicionado/, 'Compressor do ar-condicionado — Original'],
+    [/palheta|limpador/, 'Palheta do limpador — Original'],
+    [/bateria/, 'Bateria automotiva — Original'],
+    [/alternador/, 'Alternador — Original'],
+    [/motor de partida|arranque/, 'Motor de partida — Original'],
+    [/filtro de ar/, 'Filtro de ar — Original'],
+    [/filtro de óleo|filtro de oleo/, 'Filtro de óleo — Original'],
+    [/vela/, 'Vela de ignição — Original'],
+    [/para[- ]?choque/, 'Para-choque — Original'],
+    [/capô|capo/, 'Capô — Original'],
+    [/maçaneta|macaneta/, 'Maçaneta externa — Original'],
+    [/fechadura/, 'Fechadura da porta — Original']
+  ];
+  const items = [];
+  for (const message of getUserMessages()) {
+    const lower = message.toLocaleLowerCase('pt-BR');
+    for (const [pattern, name] of catalog) {
+      if (!pattern.test(lower)) continue;
+      const removing = /(remov|tir|exclu|cancel|não quero|nao quero|trocar|troque|mudar|substitu)/i.test(lower);
+      const index = items.findIndex(item => item.key === name);
+      if (removing && index >= 0) items.splice(index, 1);
+      if (!removing && index < 0) {
+        const qtyMatch = lower.match(/(?:x|quantidade|qtd|qty)\s*(\d+)|\b(\d+)\s*(?:unidades?|peças?)/i);
+        items.push({ key: name, name, qty: qtyMatch ? Number(qtyMatch[1] || qtyMatch[2]) : 1 });
+      }
+    }
+  }
+  return items;
+}
+
+function renderCartItems(items, vehicle) {
+  return items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border-2);"><div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--brand),var(--brand-dk));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">${escapeReceiptText(item.name)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px;">Hyundai · ${escapeReceiptText(vehicle)} · Qtd. ${item.qty}</div></div></div>`).join('');
+}
+
 function renderQuoteFromConversation(userText, aiReply) {
   const conversation = getUserConversationText();
   const text = String(conversation || userText || '').replace(/\s+/g, ' ').trim();
@@ -2186,7 +2235,12 @@ function renderQuoteFromConversation(userText, aiReply) {
 
   let part = text.slice(year.index + year[0].length)
     .replace(/^[\s|,:;–—-]+/, '').split('|')[0].trim();
-  if (!part || /^(oi|olá|ola|sim|não|nao)$/i.test(part)) return false;
+  const items = extractCartItems();
+  if (!items.length && part && !/^(oi|olá|ola|sim|não|nao)$/i.test(part)) {
+    items.push({ key: part.toLocaleLowerCase('pt-BR'), name: professionalizeProductName(part), qty: 1 });
+  }
+  if (!items.length) return false;
+  window._quoteItems = items;
 
   const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
   const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor sob consulta';
@@ -2194,7 +2248,7 @@ function renderQuoteFromConversation(userText, aiReply) {
     ? 'Orçamento inicial preparado para o veículo informado.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
 
-  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part, price, note })}`);
+  return renderQuoteCard(`ORCAMENTO_CARD:${JSON.stringify({ vehicle, part: items[0].name, items, price, note })}`);
 }
 
 function updateQuoteCardFromReply(reply) {
@@ -2224,9 +2278,17 @@ async function doSend() {
   const reply = await getChatGPTResponse(text, getChatHistoryForAI(), window._currentFlowStep || 1);
   setTyping(false);
   const quoteConversation = getUserConversationText();
-  const canCreateQuote = !window._quoteCardShown && /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+  const hasVehicle = /\b(?:19|20)\d{2}(?:\s*[/-]\s*\d{2,4})?\b/.test(quoteConversation);
+  const hasItems = extractCartItems().length > 0;
+  const canCreateQuote = hasVehicle && hasItems;
   const quoteCreated = canCreateQuote && renderQuoteFromConversation(text, reply);
-  if (!quoteCreated && !renderQuoteCard(reply)) await agentSay(reply, true, true);
+  if (!quoteCreated && window._quoteCardShown && hasItems) {
+    window._quoteCardShown = false;
+    const oldCard = document.querySelector('.order-confirmation-block');
+    if (oldCard) oldCard.remove();
+    renderQuoteFromConversation(text, reply);
+  }
+  if (!quoteCreated && !window._quoteCardShown && !renderQuoteCard(reply)) await agentSay(reply, true, true);
   saveChatHistory();
   updateSendButtonState();
 }
