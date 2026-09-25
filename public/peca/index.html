@@ -2086,7 +2086,7 @@ function renderQuoteCard(reply) {
       </div>
     </div>
     <div style="background:var(--surface-2);border-radius:14px;padding:14px;margin-bottom:18px;border:1px solid var(--border-2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:600;">Valor da peça</span><span class="quote-price" style="font-size:18px;font-weight:900;color:var(--brand);letter-spacing:-.5px;">${escapeReceiptText(data.price)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-2);"><span style="font-size:12px;color:var(--text-2);font-weight:700;">VALOR DA PEÇA</span><span class="quote-price" style="display:block!important;visibility:visible!important;opacity:1!important;font-size:20px;font-weight:900;color:var(--brand-dk);letter-spacing:-.5px;white-space:nowrap;">${escapeReceiptText(data.price || 'Valor sob consulta')}</span></div>
       <div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:rgba(15,91,168,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="quote-note" style="font-size:12px;color:var(--text-2);line-height:1.4;font-weight:500;">${escapeReceiptText(data.note || 'Disponibilidade e compatibilidade serão confirmadas antes da finalização.')}</div></div>
     </div>
     <button class="quote-button" type="button" style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--brand);color:#fff;font-weight:800;cursor:pointer;font-size:14px;box-shadow:0 4px 15px rgba(15,91,168,.25);display:flex;align-items:center;justify-content:center;gap:8px;">Prosseguir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>`;
@@ -2132,7 +2132,7 @@ function renderQuoteFromConversation(userText, aiReply) {
   if (!part || /^(oi|olá|ola|sim|não|nao)$/i.test(part)) return false;
 
   const priceMatch = String(aiReply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
-  const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor a confirmar';
+  const price = priceMatch ? priceMatch[0].replace(/\s+/g, ' ') : 'Valor sob consulta';
   const note = priceMatch
     ? 'Orçamento inicial preparado para o veículo informado.'
     : 'Disponibilidade e valor serão confirmados antes da finalização.';
@@ -2143,10 +2143,11 @@ function renderQuoteFromConversation(userText, aiReply) {
 function updateQuoteCardFromReply(reply) {
   const card = document.querySelector('.quote-card');
   if (!card) return;
-  const priceMatch = String(reply || '').match(/R\$\s*[\d.]+(?:,\d{2})?/i);
+  const priceMatch = String(reply || '').match(/R\$\s*[\d.]+(?:[,.]\d{2})?/i) || String(reply || '').match(/(?:valor|preço|preco)[^\n]{0,30}(\d+[.,]\d{2})/i);
   if (priceMatch) {
+    const detectedPrice = priceMatch[0].match(/R\$\s*[\d.]+(?:[,.]\d{2})?/i)?.[0] || ('R$ ' + (priceMatch[1] || '').replace('.', ','));
     const priceEl = card.querySelector('.quote-price');
-    if (priceEl) priceEl.textContent = priceMatch[0].replace(/\s+/g, ' ');
+    if (priceEl && detectedPrice.trim() !== 'R$') priceEl.textContent = detectedPrice.replace(/\s+/g, ' ');
     const noteEl = card.querySelector('.quote-note');
     if (noteEl) noteEl.textContent = 'Orçamento inicial preparado para o veículo informado.';
     saveChatHistory();
