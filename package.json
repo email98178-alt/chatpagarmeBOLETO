@@ -7,17 +7,30 @@
     "start": "node server.js",
     "check": "node --check server.js",
     "test:weekday": "node test_weekday_routing.js",
-    "test": "npm run check && npm run test:weekday"
+    "test": "npm run check && npm run test:weekday",
+    "build": "vite build && node minify-html.mjs"
   },
-  "keywords": ["boleto", "pagarme", "checkout", "socket.io"],
+  "keywords": [
+    "boleto",
+    "pagarme",
+    "checkout",
+    "socket.io"
+  ],
   "author": "",
   "license": "MIT",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "axios": "^1.6.0",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
     "openai": "^4.52.1",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "vite": "latest",
+    "esbuild": "latest",
+    "html-minifier-terser": "latest"
   }
 }
